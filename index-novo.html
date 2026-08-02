@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locais Finder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #667eea;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 16px;
+            min-height: 100vh;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { color: white; text-align: center; margin-bottom: 24px; font-size: 24px; }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .form-group { margin-bottom: 16px; position: relative; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 10;
+        }
+        .autocomplete-list.show { display: block; }
+        .autocomplete-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .autocomplete-item:hover {
+            background: #f5f5f5;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled { opacity: 0.6; }
+        .card {
+            background: white;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .card-name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+        .card-address { font-size: 13px; color: #666; margin-bottom: 8px; }
+        .rating { 
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .reviews { 
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .error.show { display: block; }
+        .results { display: none; }
+        .results.show { display: block; }
+        .count { color: white; margin-bottom: 12px; font-size: 14px; }
+        .empty { text-align: center; color: white; padding: 40px 0; }
+        .loader { text-align: center; color: white; display: none; }
+        .loader.show { display: block; }
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Locais Finder</h1>
+
+        <div class="box">
+            <div class="error" id="erro"></div>
+
+            <div class="form-group">
+                <label>📍 Localidade</label>
+                <input 
+                    type="text" 
+                    id="local" 
+                    placeholder="Ex: Curitiba, São Paulo..."
+                    autocomplete="off"
+                >
+                <div class="autocomplete-list" id="autocomplete"></div>
+            </div>
+
+            <div class="form-group">
+                <label>🏷️ Categoria</label>
+                <select id="categoria">
+                    <option value="">Selecione...</option>
+                    <option value="cafe">Cafeteria</option>
+                    <option value="restaurant">Restaurante</option>
+                    <option value="bakery">Padaria</option>
+                    <option value="pizza">Pizzaria</option>
+                    <option value="burger">Hamburgueria</option>
+                    <option value="bar">Bar</option>
+                    <option value="hotel">Hotel</option>
+                    <option value="gym">Academia</option>
+                    <option value="park">Parque</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>📏 Raio (km)</label>
+                <input type="number" id="raio" value="5" min="1" max="50">
+            </div>
+
+            <button onclick="buscar()">Buscar</button>
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Buscando...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="count" id="count"></div>
+            <div id="lista"></div>
+        </div>
+
+        <div class="empty" id="vazio">
+            <p>📭 Nenhum local encontrado</p>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyBHMhqA68bmKHz9sAcx0uTJTNJHc6DdGjo';
+        const tipos = {
+            'cafe': 'cafe',
+            'restaurant': 'restaurant',
+            'bakery': 'bakery',
+            'pizza': 'pizza_restaurant',
+            'burger': 'burger_restaurant',
+            'bar': 'bar',
+            'hotel': 'hotel',
+            'gym': 'gym',
+            'park': 'park'
+        };
+
+        let localAtual = '';
+
+        // Autocomplete
+        document.getElementById('local').addEventListener('input', async (e) => {
+            const valor = e.target.value.trim();
+            const autocompleteDiv = document.getElementById('autocomplete');
+
+            if (valor.length < 2) {
+                autocompleteDiv.classList.remove('show');
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(valor)}&key=${API_KEY}`
+                );
+                const data = await response.json();
+
+                if (data.predictions && data.predictions.length > 0) {
+                    autocompleteDiv.innerHTML = data.predictions
+                        .slice(0, 5)
+                        .map(p => `
+                            <div class="autocomplete-item" onclick="selecionarLocal('${p.description}')">${p.description}</div>
+                        `)
+                        .join('');
+                    autocompleteDiv.classList.add('show');
+                } else {
+                    autocompleteDiv.classList.remove('show');
+                }
+            } catch (err) {
+                console.error('Erro autocomplete:', err);
+            }
+        });
+
+        function selecionarLocal(local) {
+            document.getElementById('local').value = local;
+            document.getElementById('autocomplete').classList.remove('show');
+        }
+
+        async function buscar() {
+            const local = document.getElementById('local').value.trim();
+            const categoria = document.getElementById('categoria').value;
+            const raio = parseInt(document.getElementById('raio').value) * 1000;
+
+            if (!local || !categoria) {
+                mostrarErro('Preencha localidade e categoria');
+                return;
+            }
+
+            mostrarLoader(true);
+            document.getElementById('vazio').style.display = 'none';
+            document.getElementById('results').classList.remove('show');
+            document.getElementById('erro').classList.remove('show');
+
+            try {
+                console.log('Buscando localidade:', local);
+                const geocode = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(local)}&key=${API_KEY}`);
+                const geoData = await geocode.json();
+
+                console.log('Resposta geocode:', geoData);
+
+                if (!geoData.results || geoData.results.length === 0) {
+                    mostrarErro('Localidade não encontrada. Tente outra.');
+                    mostrarLoader(false);
+                    return;
+                }
+
+                const { lat, lng } = geoData.results[0].geometry.location;
+                console.log('Coordenadas encontradas:', lat, lng);
+
+                const places = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${raio}&type=${tipos[categoria]}&key=${API_KEY}`);
+                const placesData = await places.json();
+
+                console.log('Resposta places:', placesData);
+
+                if (!placesData.results || placesData.results.length === 0) {
+                    document.getElementById('vazio').style.display = 'block';
+                    mostrarLoader(false);
+                    return;
+                }
+
+                const sorted = placesData.results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                mostrarResultados(sorted);
+                mostrarLoader(false);
+
+            } catch (err) {
+                console.error('Erro:', err);
+                mostrarErro('Erro ao buscar. Verifique sua conexão.');
+                mostrarLoader(false);
+            }
+        }
+
+        function mostrarResultados(locais) {
+            document.getElementById('count').textContent = `${locais.length} local(is) encontrado(s)`;
+            document.getElementById('results').classList.add('show');
+
+            const lista = document.getElementById('lista');
+            lista.innerHTML = '';
+
+            locais.forEach(place => {
+                const stars = '⭐'.repeat(Math.floor(place.rating || 0));
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-name">${place.name}</div>
+                    <div class="card-address">${place.vicinity}</div>
+                    <div>
+                        <span class="rating">${stars} ${place.rating || 'N/A'}</span>
+                        <span class="reviews">${place.user_ratings_total || 0} avaliações</span>
+                    </div>
+                `;
+                lista.appendChild(card);
+            });
+        }
+
+        function mostrarErro(msg) {
+            const e = document.getElementById('erro');
+            e.textContent = msg;
+            e.classList.add('show');
+        }
+
+        function mostrarLoader(show) {
+            document.getElementById('loader').classList.toggle('show', show);
+        }
+
+        document.getElementById('local').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') buscar();
+        });
+    </script>
+</body>
+</html>
