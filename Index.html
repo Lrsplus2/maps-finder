@@ -11,7 +11,6 @@
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             padding: 16px;
             min-height: 100vh;
-            color: #333;
         }
         .container { max-width: 600px; margin: 0 auto; }
         h1 { color: white; text-align: center; margin-bottom: 24px; font-size: 26px; }
@@ -20,7 +19,7 @@
             padding: 24px;
             border-radius: 16px;
             margin-bottom: 20px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
         }
         .form-group { margin-bottom: 16px; }
         label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
@@ -30,12 +29,8 @@
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 16px;
-            font-family: inherit;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+        input:focus, select:focus { outline: none; border-color: #667eea; }
         button {
             width: 100%;
             padding: 14px;
@@ -47,20 +42,8 @@
             cursor: pointer;
             font-size: 16px;
         }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            display: none;
-            border-left: 4px solid #c62828;
-        }
+        button:disabled { opacity: 0.6; }
+        .error { background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none; }
         .error.show { display: block; }
         .card {
             background: white;
@@ -70,34 +53,17 @@
             border-left: 4px solid #667eea;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        .card-name { font-weight: 600; font-size: 16px; margin-bottom: 6px; }
-        .card-address { font-size: 13px; color: #666; margin-bottom: 8px; line-height: 1.4; }
-        .badge { 
-            display: inline-block;
-            background: #f0f0f0;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #666;
-            margin-right: 6px;
-        }
+        .card-name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+        .card-address { font-size: 13px; color: #666; margin-bottom: 8px; }
+        .badge { display: inline-block; background: #f0f0f0; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 6px; }
         .results { display: none; }
         .results.show { display: block; }
         .count { color: white; margin-bottom: 16px; font-size: 14px; }
-        .empty { text-align: center; color: white; padding: 40px 16px; }
+        .empty { text-align: center; color: white; padding: 40px 0; }
         .loader { text-align: center; color: white; display: none; }
-        .loader.show { display: block; margin-bottom: 20px; }
-        .spinner {
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
+        .loader.show { display: block; }
+        .spinner { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 12px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .info { background: #e3f2fd; color: #1976d2; padding: 12px; border-radius: 8px; font-size: 13px; margin-top: 16px; border-left: 4px solid #1976d2; }
     </style>
 </head>
 <body>
@@ -109,12 +75,7 @@
 
             <div class="form-group">
                 <label>📍 Localidade</label>
-                <input 
-                    type="text" 
-                    id="local" 
-                    placeholder="Ex: Curitiba, São Paulo, Paris..."
-                    autocomplete="off"
-                >
+                <input type="text" id="local" placeholder="Ex: Curitiba">
             </div>
 
             <div class="form-group">
@@ -125,10 +86,6 @@
                     <option value="restaurant">🍽️ Restaurante</option>
                     <option value="bar">🍺 Bar</option>
                     <option value="hotel">🏨 Hotel</option>
-                    <option value="hospital">🏥 Hospital</option>
-                    <option value="pharmacy">💊 Farmácia</option>
-                    <option value="bank">🏦 Banco</option>
-                    <option value="atm">🏧 Caixa Eletrônico</option>
                 </select>
             </div>
 
@@ -138,13 +95,11 @@
             </div>
 
             <button onclick="buscar()">🔍 Buscar</button>
-            
-            <div class="info">ℹ️ Dados obtidos do OpenStreetMap (comunidade global)</div>
         </div>
 
         <div class="loader" id="loader">
             <div class="spinner"></div>
-            <p>Buscando locais próximos...</p>
+            <p>Buscando...</p>
         </div>
 
         <div class="results" id="results">
@@ -158,24 +113,19 @@
     </div>
 
     <script>
-        const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
-        const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+        const API_KEY = 'AIzaSyBHMhqA68bmKHz9sAcx0uTJTNJHc6DdGjo';
 
-        const categoriasTags = {
-            'cafe': ['amenity=cafe', 'amenity=coffee'],
-            'restaurant': ['amenity=restaurant'],
-            'bar': ['amenity=bar'],
-            'hotel': ['tourism=hotel'],
-            'hospital': ['amenity=hospital'],
-            'pharmacy': ['amenity=pharmacy'],
-            'bank': ['amenity=bank'],
-            'atm': ['amenity=atm']
+        const tipos = {
+            'cafe': 'cafe',
+            'restaurant': 'restaurant',
+            'bar': 'bar',
+            'hotel': 'hotel'
         };
 
         async function buscar() {
             const local = document.getElementById('local').value.trim();
             const categoria = document.getElementById('categoria').value;
-            const raio = parseInt(document.getElementById('raio').value);
+            const raio = parseInt(document.getElementById('raio').value) * 1000;
 
             if (!local || !categoria) {
                 mostrarErro('Preencha localidade e categoria');
@@ -188,133 +138,56 @@
             document.getElementById('erro').classList.remove('show');
 
             try {
-                // Passo 1: Geocodificar localidade com Nominatim
-                console.log('Buscando localidade:', local);
-                const geoResponse = await fetch(
-                    `${NOMINATIM_URL}?q=${encodeURIComponent(local)}&format=json&limit=1`,
-                    { headers: { 'Accept': 'application/json' } }
-                );
+                const geoUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(local)}&key=${API_KEY}`;
+                const geoResponse = await fetch(geoUrl);
                 const geoData = await geoResponse.json();
 
-                if (!geoData || geoData.length === 0) {
-                    mostrarErro('Localidade não encontrada. Tente outro nome.');
+                if (geoData.status !== 'OK' || !geoData.results || geoData.results.length === 0) {
+                    mostrarErro(`Localidade "${local}" não encontrada.`);
                     mostrarLoader(false);
                     return;
                 }
 
-                const lat = parseFloat(geoData[0].lat);
-                const lng = parseFloat(geoData[0].lon);
-                console.log('Coordenadas:', lat, lng);
+                const { lat, lng } = geoData.results[0].geometry.location;
 
-                // Passo 2: Buscar locais com Overpass API
-                const tags = categoriasTags[categoria];
-                const bbox = `${lat - (raio/111)},${lng - (raio/111)},${lat + (raio/111)},${lng + (raio/111)}`;
-                
-                let query = `[bbox:${bbox}];(`;
-                tags.forEach(tag => {
-                    query += `node[${tag}];way[${tag}];`;
-                });
-                query += `);out center;`;
+                const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${raio}&type=${tipos[categoria]}&key=${API_KEY}`;
+                const placesResponse = await fetch(placesUrl);
+                const placesData = await placesResponse.json();
 
-                console.log('Query Overpass:', query);
-
-                const placesResponse = await fetch(OVERPASS_URL, {
-                    method: 'POST',
-                    body: query,
-                    headers: { 'Content-Type': 'application/osm3s' }
-                });
-
-                const placesText = await placesResponse.text();
-                const places = parseOverpassData(placesText);
-
-                if (!places || places.length === 0) {
+                if (placesData.status !== 'OK' || !placesData.results || placesData.results.length === 0) {
                     document.getElementById('vazio').style.display = 'block';
                     mostrarLoader(false);
                     return;
                 }
 
-                // Calcular distância e ordenar
-                const placesComDistancia = places.map(p => ({
-                    ...p,
-                    distancia: calcularDistancia(lat, lng, p.lat, p.lng)
-                })).sort((a, b) => a.distancia - b.distancia);
-
-                mostrarResultados(placesComDistancia);
+                const sorted = placesData.results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                mostrarResultados(sorted);
                 mostrarLoader(false);
 
             } catch (err) {
                 console.error('Erro:', err);
-                mostrarErro('Erro ao buscar. Tente novamente.');
+                mostrarErro('Erro na busca. Verifique sua conexão.');
                 mostrarLoader(false);
             }
         }
 
-        function parseOverpassData(text) {
-            const places = [];
-            const lines = text.split('\n');
-            
-            let currentPlace = null;
-            for (let line of lines) {
-                line = line.trim();
-                
-                if (line.startsWith('node') || line.startsWith('way')) {
-                    if (currentPlace && currentPlace.nome) {
-                        places.push(currentPlace);
-                    }
-                    currentPlace = { nome: '', lat: 0, lng: 0 };
-                }
-                
-                if (line.startsWith('center lat')) {
-                    const match = line.match(/lat="([\d.-]+)" lon="([\d.-]+)"/);
-                    if (match) {
-                        currentPlace.lat = parseFloat(match[1]);
-                        currentPlace.lng = parseFloat(match[2]);
-                    }
-                }
-                
-                if (line.startsWith('tag k="name"')) {
-                    const match = line.match(/v="([^"]+)"/);
-                    if (match) {
-                        currentPlace.nome = match[1];
-                    }
-                }
-            }
-            
-            if (currentPlace && currentPlace.nome) {
-                places.push(currentPlace);
-            }
-            
-            return places;
-        }
-
-        function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
         function mostrarResultados(locais) {
-            document.getElementById('count').textContent = `✅ ${locais.length} local(is) encontrado(s)`;
+            document.getElementById('count').textContent = `✅ ${locais.length} local(is)`;
             document.getElementById('results').classList.add('show');
 
             const lista = document.getElementById('lista');
             lista.innerHTML = '';
 
             locais.forEach(place => {
+                const stars = '⭐'.repeat(Math.floor(place.rating || 0));
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <div class="card-name">${place.nome}</div>
-                    <div class="card-address">
-                        📍 ${place.distancia.toFixed(2)} km de distância
-                    </div>
+                    <div class="card-name">${place.name}</div>
+                    <div class="card-address">${place.vicinity}</div>
                     <div>
-                        <span class="badge">🌍 OpenStreetMap</span>
+                        <span class="badge">${stars} ${place.rating || 'N/A'}</span>
+                        <span class="badge">${place.user_ratings_total || 0} avaliações</span>
                     </div>
                 `;
                 lista.appendChild(card);
