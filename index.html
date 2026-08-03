@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Maps Finder</title>
 <meta name="description" content="Ranking de estabelecimentos por numero de avaliacoes no Google Maps">
-<meta name="theme-color" content="#667eea">
+<meta name="theme-color" content="#5b4bc4">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,97 +15,225 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#667eea,#764ba2);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:16px;min-height:100vh}
-.container{max-width:600px;margin:0 auto}
-h1{color:#fff;text-align:center;margin-bottom:18px;font-size:24px}
-.box{background:#fff;padding:20px;border-radius:14px;margin-bottom:18px;box-shadow:0 8px 28px rgba(0,0,0,.16)}
-.fg{margin-bottom:14px}
-label{display:block;font-weight:600;margin-bottom:6px;font-size:14px}
-input,select{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;font-family:inherit;background:#fff}
-input:focus,select:focus{outline:none;border-color:#667eea}
+:root{--roxo:#667eea;--roxo-esc:#764ba2;--roxo-txt:#4c3bb0;
+  --campo:#f6f6fb;--borda:#e6e6f0;--texto:#1f2033;--suave:#6b6d85}
+body{background:
+    radial-gradient(1100px 520px at 12% -8%, rgba(255,255,255,.20), transparent 60%),
+    radial-gradient(900px 480px at 92% 8%, rgba(255,255,255,.12), transparent 55%),
+    linear-gradient(160deg,#667eea 0%,#6d5bc0 45%,#764ba2 100%);
+  background-attachment:fixed;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));min-height:100vh;color:var(--texto);
+  -webkit-font-smoothing:antialiased}
+.container{max-width:620px;margin:0 auto}
+
+.topo{display:flex;align-items:center;gap:11px;margin:4px 0 18px;color:#fff}
+.topo .logo{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:19px}
+.topo h1{font-size:20px;font-weight:700;letter-spacing:-.3px;line-height:1.1}
+.topo p{font-size:12px;color:rgba(255,255,255,.78);margin-top:1px}
+
+.box{background:#fff;padding:20px 18px;border-radius:20px;margin-bottom:16px;
+  box-shadow:0 16px 40px rgba(28,20,70,.20),0 2px 6px rgba(28,20,70,.08)}
+.fg{margin-bottom:14px;position:relative}
+label{display:block;font-weight:600;margin-bottom:7px;font-size:12.5px;color:var(--suave);
+  text-transform:uppercase;letter-spacing:.4px}
+label .opc{text-transform:none;letter-spacing:0;font-weight:400;color:#a2a4b8}
+input,select{width:100%;padding:13px 14px;border:1.5px solid var(--borda);border-radius:12px;
+  font-size:16px;font-family:inherit;background:var(--campo);color:var(--texto);
+  transition:border-color .18s,background .18s,box-shadow .18s}
+input:focus,select:focus{outline:none;border-color:var(--roxo);background:#fff;
+  box-shadow:0 0 0 4px rgba(102,126,234,.14)}
 input.invalido{border-color:#e53935;background:#fff5f5}
-optgroup{font-weight:700;color:#3949ab}
-option{font-weight:400;color:#333}
-gmp-place-autocomplete{width:100%;display:block}
-.hint{font-size:12px;color:#666;margin-top:6px;line-height:1.4}
-.hint.alerta{color:#c62828;font-weight:600}
-button{width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:16px;cursor:pointer}
-button:disabled{opacity:.6;cursor:not-allowed}
-.msg{padding:12px;border-radius:8px;margin-bottom:14px;font-size:14px;display:none;line-height:1.45}
+select{appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6d85' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+optgroup{font-weight:700;color:var(--roxo-txt);background:#fff}
+option{font-weight:400;color:var(--texto);background:#fff}
+
+.sugestoes{position:absolute;top:100%;left:0;right:0;margin-top:5px;background:#fff;
+  border:1.5px solid var(--borda);border-radius:12px;box-shadow:0 12px 28px rgba(28,20,70,.18);
+  max-height:230px;overflow-y:auto;display:none;z-index:50}
+.sugestoes.show{display:block}
+.sug{padding:12px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #f1f1f7;line-height:1.4}
+.sug:last-child{border-bottom:none}
+.sug:hover,.sug.sel{background:#f4f5fc;color:var(--roxo-txt)}
+
+.hint{font-size:11.5px;color:#9092a8;margin-top:7px;line-height:1.45}
+.hint.alerta{color:#d33;font-weight:600}
+.check{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;
+  padding:11px 13px;background:var(--campo);border:1.5px solid var(--borda);border-radius:12px}
+.check input{width:17px;height:17px;margin:0;accent-color:var(--roxo);flex:none}
+.check span{font-size:13.5px;color:#4a4c63;font-weight:500}
+
+button.principal{width:100%;padding:15px;border:none;border-radius:13px;cursor:pointer;
+  background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-weight:650;font-size:15.5px;
+  font-family:inherit;box-shadow:0 8px 20px rgba(102,126,234,.34);
+  transition:transform .12s,box-shadow .18s,opacity .18s}
+button.principal:active{transform:translateY(1px)}
+button.principal:disabled{opacity:.55;box-shadow:none;cursor:not-allowed}
+
+.msg{padding:13px 14px;border-radius:12px;margin-bottom:14px;font-size:13.5px;display:none;line-height:1.5}
 .msg.show{display:block}
-.err{background:#ffebee;color:#c62828}
-.card{background:#fff;padding:14px;margin-bottom:10px;border-radius:10px;border-left:4px solid #667eea;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.pos{display:inline-block;background:#667eea;color:#fff;min-width:26px;height:26px;line-height:26px;text-align:center;border-radius:13px;font-size:13px;font-weight:700;margin-right:8px;padding:0 6px}
-.nome{font-weight:600;font-size:16px}
-.end{font-size:13px;color:#666;margin:6px 0 8px}
-.badge{display:inline-block;background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:12px;margin-right:6px;color:#444}
-.destaque{background:#e8eaf6;color:#3949ab;font-weight:600}
-.count{color:#fff;margin-bottom:12px;font-size:14px;line-height:1.4}
-.loader{text-align:center;color:#fff;display:none}
+.err{background:#fdecec;color:#b5252b;border-left:3px solid #e05252}
+
+.resumo{color:#fff;margin:2px 0 13px;font-size:13px;line-height:1.55;
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.20);
+  padding:11px 13px;border-radius:13px}
+.resumo .sub{color:rgba(255,255,255,.76);font-size:11.5px;margin-top:3px;display:block}
+.card{background:#fff;padding:14px 15px;margin-bottom:9px;border-radius:16px;
+  box-shadow:0 4px 14px rgba(28,20,70,.13);opacity:0;transform:translateY(10px);
+  animation:sobe .34s ease forwards}
+@keyframes sobe{to{opacity:1;transform:translateY(0)}}
+.linha1{display:flex;align-items:flex-start;gap:11px}
+.pos{flex:none;min-width:27px;height:27px;line-height:27px;text-align:center;border-radius:9px;
+  font-size:12.5px;font-weight:700;background:#eef0fb;color:var(--roxo-txt)}
+.pos.p1{background:linear-gradient(135deg,#f6c445,#e8a317);color:#fff}
+.pos.p2{background:linear-gradient(135deg,#c8ccd6,#a7adba);color:#fff}
+.pos.p3{background:linear-gradient(135deg,#dda06a,#c07f45);color:#fff}
+.nome{font-weight:650;font-size:15.5px;line-height:1.3}
+.end{font-size:12.5px;color:var(--suave);margin:5px 0 10px 38px;line-height:1.45}
+.tags{margin-left:38px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:4px;background:#f2f3f9;padding:5px 9px;
+  border-radius:8px;font-size:11.5px;color:#54566d;font-weight:500}
+.badge.forte{background:#eaecfb;color:var(--roxo-txt);font-weight:650}
+.badge.nota{background:#fff6e5;color:#a9721a}
+a.maps{margin-left:auto;color:var(--roxo);font-size:12px;text-decoration:none;font-weight:600;
+  padding:5px 9px;border-radius:8px;background:#f2f3f9}
+
+.loader{text-align:center;color:#fff;display:none;padding:22px 0}
 .loader.show{display:block}
-.spin{border:3px solid rgba(255,255,255,.3);border-top:3px solid #fff;border-radius:50%;width:38px;height:38px;animation:s 1s linear infinite;margin:0 auto 10px}
-@keyframes s{to{transform:rotate(360deg)}}
-a.maps{color:#4285F4;font-size:13px;text-decoration:none}
-#splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;text-align:center;padding:24px;
-  background:linear-gradient(135deg,#667eea,#764ba2);
-  transition:opacity .55s ease, visibility .55s ease}
+.spin{width:36px;height:36px;margin:0 auto 11px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.28);border-top-color:#fff;animation:gira .85s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.loader p{font-size:13px;color:rgba(255,255,255,.85)}
+footer{text-align:center;color:rgba(255,255,255,.72);font-size:11.5px;margin:26px 0 6px;
+  padding-top:15px;border-top:1px solid rgba(255,255,255,.20)}
+
+#gate{position:fixed;inset:0;z-index:9000;display:none;flex-direction:column;align-items:center;
+  justify-content:center;padding:26px;overflow-y:auto;
+  background:linear-gradient(160deg,#667eea 0%,#6d5bc0 45%,#764ba2 100%)}
+#gate.ativo{display:flex}
+#gate .painel{background:#fff;border-radius:20px;padding:24px 20px;width:100%;max-width:380px;
+  box-shadow:0 18px 44px rgba(20,14,50,.30)}
+#gate h2{font-size:19px;font-weight:700;margin-bottom:6px}
+#gate .desc{font-size:13px;color:var(--suave);line-height:1.55;margin-bottom:18px}
+#gate .rotulo{font-size:11.5px;font-weight:600;color:var(--suave);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:7px}
+#gate .codigo{display:flex;align-items:center;gap:9px;background:var(--campo);
+  border:1.5px dashed #c9c9dd;border-radius:12px;padding:13px 14px;margin-bottom:7px}
+#gate .codigo code{flex:1;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;
+  font-weight:700;letter-spacing:2.5px;color:var(--roxo-txt)}
+#gate .copiar{border:none;background:#eaecfb;color:var(--roxo-txt);font-weight:650;font-size:12px;
+  padding:8px 11px;border-radius:9px;cursor:pointer;font-family:inherit;flex:none}
+#gate .aviso{font-size:11.5px;color:#9092a8;line-height:1.45;margin-bottom:18px}
+#gate input{text-transform:uppercase;letter-spacing:2px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;text-align:center;font-size:16px}
+#gate .msgGate{padding:11px 13px;border-radius:11px;font-size:13px;margin-bottom:13px;
+  display:none;line-height:1.5}
+#gate .msgGate.show{display:block}
+#gate .msgGate.ruim{background:#fdecec;color:#b5252b}
+#gate .msgGate.bom{background:#e8f6ec;color:#1f6b34}
+#gate .contato{display:block;text-align:center;font-size:12.5px;color:var(--roxo);margin-top:14px;
+  text-decoration:none;font-weight:600}
+#gate .rodape{text-align:center;font-size:11px;color:rgba(255,255,255,.6);margin-top:20px}
+
+#splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:26px;
+  background:linear-gradient(160deg,#667eea 0%,#6d5bc0 45%,#764ba2 100%);
+  transition:opacity .6s ease,visibility .6s ease}
 #splash.oculta{opacity:0;visibility:hidden}
-#splash .marca{font-size:34px;font-weight:700;color:#fff;letter-spacing:-.5px;
-  opacity:0;transform:translateY(14px);animation:entra .6s ease .15s forwards}
-#splash .frase{font-size:15px;color:rgba(255,255,255,.9);margin-top:10px;max-width:280px;
-  line-height:1.5;opacity:0;transform:translateY(14px);animation:entra .6s ease .35s forwards}
-#splash .barra{width:120px;height:3px;border-radius:2px;margin-top:28px;
-  background:rgba(255,255,255,.25);overflow:hidden;opacity:0;animation:entra .4s ease .55s forwards}
-#splash .barra i{display:block;height:100%;width:40%;border-radius:2px;background:#fff;
-  animation:desliza 1.1s ease-in-out infinite}
+#splash .simbolo{width:78px;height:78px;border-radius:23px;background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+  font-size:38px;margin-bottom:22px;opacity:0;transform:scale(.85);
+  animation:pop .7s cubic-bezier(.2,.9,.3,1.2) .1s forwards}
+#splash .marca{font-size:33px;font-weight:700;color:#fff;letter-spacing:-.7px;opacity:0;
+  transform:translateY(14px);animation:entra .65s ease .3s forwards}
+#splash .frase{font-size:14.5px;color:rgba(255,255,255,.86);margin-top:11px;max-width:270px;
+  line-height:1.55;opacity:0;transform:translateY(14px);animation:entra .65s ease .5s forwards}
+#splash .barra{width:112px;height:3px;border-radius:2px;margin-top:32px;
+  background:rgba(255,255,255,.22);overflow:hidden;opacity:0;animation:entra .4s ease .7s forwards}
+#splash .barra i{display:block;height:100%;border-radius:2px;background:#fff;width:0%;
+  animation:carrega 4s cubic-bezier(.3,.1,.2,1) .7s forwards}
+#splash .autor{position:absolute;bottom:26px;font-size:11px;color:rgba(255,255,255,.55)}
 @keyframes entra{to{opacity:1;transform:translateY(0)}}
-@keyframes desliza{0%{margin-left:-40%}100%{margin-left:100%}}
-footer{text-align:center;color:rgba(255,255,255,.85);font-size:12px;margin:28px 0 8px;padding-top:14px;border-top:1px solid rgba(255,255,255,.25)}
+@keyframes pop{to{opacity:1;transform:scale(1)}}
+@keyframes carrega{to{width:100%}}
 </style>
 </head>
 <body>
+
 <div id="splash">
+  <div class="simbolo">&#128269;</div>
   <div class="marca">Maps Finder</div>
   <div class="frase">Os lugares mais avaliados perto de voce, em ordem</div>
   <div class="barra"><i></i></div>
+  <div class="autor">Direitos reservados @LeandroRSouza</div>
 </div>
 
-<div class="container">
-  <h1>🔍 Maps Finder</h1>
+<div id="gate">
+  <div class="painel">
+    <h2>Ativacao necessaria</h2>
+    <p class="desc">Este aparelho ainda nao esta autorizado. Envie o codigo abaixo
+    para receber sua chave de ativacao.</p>
+    <div class="rotulo">Codigo deste aparelho</div>
+    <div class="codigo">
+      <code id="codAparelho">--------</code>
+      <button class="copiar" id="btnCopiar" type="button">Copiar</button>
+    </div>
+    <p class="aviso">O codigo e unico por aparelho e por navegador. Se limpar os dados
+    do navegador, um codigo novo sera gerado.</p>
+    <div class="msgGate" id="msgGate"></div>
+    <div class="rotulo">Chave de ativacao</div>
+    <input type="text" id="chaveEntrada" placeholder="XXXX-XXXX-XXXX" maxlength="14"
+           autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <div style="height:14px"></div>
+    <button class="principal" id="btnAtivar" type="button">Ativar</button>
+    <a class="contato" id="linkContato" href="#">Solicitar chave de ativacao</a>
+  </div>
+  <div class="rodape">Direitos reservados @LeandroRSouza</div>
+</div>
+
+<div class="container" id="app" style="display:none">
+  <div class="topo">
+    <div class="logo">&#128269;</div>
+    <div>
+      <h1>Maps Finder</h1>
+      <p>Ranking por numero de avaliacoes</p>
+    </div>
+  </div>
 
   <div class="box">
     <div class="msg err" id="erro"></div>
 
     <div class="fg">
-      <label>📍 Ponto de referência</label>
-      <div id="acbox"></div>
+      <label>Ponto de referencia</label>
+      <input type="text" id="local" placeholder="Cidade, rua ou estabelecimento"
+             autocomplete="off" spellcheck="false">
+      <div class="sugestoes" id="sugestoes"></div>
+      <div class="hint" id="hintLocal">Digite e escolha uma sugestao da lista.</div>
     </div>
 
     <div class="fg">
-      <label>🔎 Nome do estabelecimento <span style="font-weight:400;color:#888">(opcional)</span></label>
+      <label>Nome do estabelecimento <span class="opc">(opcional)</span></label>
       <input type="text" id="nome" placeholder="Ex: Madeiro, Starbucks, Outback">
-      <div class="hint">Deixe vazio para listar todos da categoria. Preenchido, busca só as unidades com esse nome — a categoria continua valendo como filtro.</div>
     </div>
 
     <div class="fg">
-      <label>🏷️ Categoria</label>
+      <label>Categoria</label>
       <select id="categoria">
-        <optgroup label="🍽️ Comida e bebida">
-          <option value="restaurant">Restaurante</option>
-          <option value="cafe" selected>Cafeteria</option>
-          <option value="coffee_shop">Casa de café</option>
-          <option value="bakery">Padaria</option>
-          <option value="bar">Bar</option>
-          <option value="pub">Pub</option>
-          <option value="wine_bar">Wine bar</option>
-          <option value="night_club">Casa noturna</option>
+        <option value="">Todas as categorias</option>
+        <optgroup label="Comida e bebida">
+          <option value="restaurant">Restaurante</option><option value="cafe">Cafeteria</option>
+          <option value="coffee_shop">Casa de cafe</option><option value="bakery">Padaria</option>
+          <option value="bar">Bar</option><option value="pub">Pub</option>
+          <option value="wine_bar">Wine bar</option><option value="night_club">Casa noturna</option>
           <option value="pizza_restaurant">Pizzaria</option>
           <option value="hamburger_restaurant">Hamburgueria</option>
-          <option value="japanese_restaurant">Restaurante japonês</option>
+          <option value="japanese_restaurant">Restaurante japones</option>
           <option value="sushi_restaurant">Sushi</option>
           <option value="italian_restaurant">Restaurante italiano</option>
-          <option value="chinese_restaurant">Restaurante chinês</option>
+          <option value="chinese_restaurant">Restaurante chines</option>
           <option value="brazilian_restaurant">Restaurante brasileiro</option>
           <option value="steak_house">Churrascaria</option>
           <option value="seafood_restaurant">Frutos do mar</option>
@@ -115,347 +243,424 @@ footer{text-align:center;color:rgba(255,255,255,.85);font-size:12px;margin:28px 
           <option value="ice_cream_shop">Sorveteria</option>
           <option value="dessert_shop">Doceria</option>
         </optgroup>
-        <optgroup label="🏨 Hospedagem">
-          <option value="hotel">Hotel</option>
-          <option value="motel">Motel</option>
+        <optgroup label="Hospedagem">
+          <option value="hotel">Hotel</option><option value="motel">Motel</option>
           <option value="resort_hotel">Resort</option>
-          <option value="bed_and_breakfast">Pousada / B&amp;B</option>
-          <option value="guest_house">Hospedaria</option>
-          <option value="campground">Camping</option>
+          <option value="bed_and_breakfast">Pousada</option>
+          <option value="guest_house">Hospedaria</option><option value="campground">Camping</option>
         </optgroup>
-        <optgroup label="💪 Esporte e lazer">
-          <option value="gym">Academia</option>
-          <option value="fitness_center">Centro fitness</option>
-          <option value="yoga_studio">Estúdio de yoga</option>
-          <option value="swimming_pool">Piscina</option>
-          <option value="park">Parque</option>
+        <optgroup label="Esporte e lazer">
+          <option value="gym">Academia</option><option value="fitness_center">Centro fitness</option>
+          <option value="yoga_studio">Estudio de yoga</option>
+          <option value="swimming_pool">Piscina</option><option value="park">Parque</option>
           <option value="national_park">Parque nacional</option>
-          <option value="dog_park">Parque para cães</option>
-          <option value="playground">Playground</option>
-          <option value="stadium">Estádio</option>
-          <option value="amusement_park">Parque de diversões</option>
+          <option value="dog_park">Parque para caes</option>
+          <option value="playground">Playground</option><option value="stadium">Estadio</option>
+          <option value="amusement_park">Parque de diversoes</option>
         </optgroup>
-        <optgroup label="🏛️ Cultura e turismo">
-          <option value="tourist_attraction">Atração turística</option>
-          <option value="museum">Museu</option>
-          <option value="art_gallery">Galeria de arte</option>
-          <option value="zoo">Zoológico</option>
-          <option value="aquarium">Aquário</option>
+        <optgroup label="Cultura e turismo">
+          <option value="tourist_attraction">Atracao turistica</option>
+          <option value="museum">Museu</option><option value="art_gallery">Galeria de arte</option>
+          <option value="zoo">Zoologico</option><option value="aquarium">Aquario</option>
           <option value="movie_theater">Cinema</option>
           <option value="performing_arts_theater">Teatro</option>
           <option value="library">Biblioteca</option>
         </optgroup>
-        <optgroup label="🛍️ Compras">
+        <optgroup label="Compras">
           <option value="shopping_mall">Shopping center</option>
           <option value="supermarket">Supermercado</option>
           <option value="grocery_store">Mercearia</option>
-          <option value="convenience_store">Loja de conveniência</option>
+          <option value="convenience_store">Loja de conveniencia</option>
           <option value="department_store">Loja de departamentos</option>
           <option value="clothing_store">Loja de roupas</option>
-          <option value="shoe_store">Loja de calçados</option>
-          <option value="electronics_store">Eletrônicos</option>
-          <option value="furniture_store">Móveis</option>
-          <option value="hardware_store">Material de construção</option>
-          <option value="jewelry_store">Joalheria</option>
-          <option value="book_store">Livraria</option>
-          <option value="pet_store">Pet shop</option>
-          <option value="florist">Floricultura</option>
+          <option value="shoe_store">Loja de calcados</option>
+          <option value="electronics_store">Eletronicos</option>
+          <option value="furniture_store">Moveis</option>
+          <option value="hardware_store">Material de construcao</option>
+          <option value="jewelry_store">Joalheria</option><option value="book_store">Livraria</option>
+          <option value="pet_store">Pet shop</option><option value="florist">Floricultura</option>
         </optgroup>
-        <optgroup label="🏥 Saúde">
-          <option value="hospital">Hospital</option>
-          <option value="doctor">Consultório médico</option>
-          <option value="dentist">Dentista</option>
-          <option value="pharmacy">Farmácia</option>
+        <optgroup label="Saude">
+          <option value="hospital">Hospital</option><option value="doctor">Consultorio medico</option>
+          <option value="dentist">Dentista</option><option value="pharmacy">Farmacia</option>
           <option value="drugstore">Drogaria</option>
           <option value="physiotherapist">Fisioterapeuta</option>
-          <option value="veterinary_care">Veterinário</option>
+          <option value="veterinary_care">Veterinario</option>
         </optgroup>
-        <optgroup label="🏦 Finanças e serviços">
-          <option value="bank">Banco</option>
-          <option value="atm">Caixa eletrônico</option>
+        <optgroup label="Financas e servicos">
+          <option value="bank">Banco</option><option value="atm">Caixa eletronico</option>
           <option value="accounting">Contabilidade</option>
           <option value="insurance_agency">Seguradora</option>
-          <option value="real_estate_agency">Imobiliária</option>
+          <option value="real_estate_agency">Imobiliaria</option>
           <option value="lawyer">Advocacia</option>
-          <option value="travel_agency">Agência de viagens</option>
+          <option value="travel_agency">Agencia de viagens</option>
         </optgroup>
-        <optgroup label="🚗 Transporte e automotivo">
-          <option value="gas_station">Posto de combustível</option>
-          <option value="electric_vehicle_charging_station">Recarga elétrica</option>
-          <option value="car_repair">Oficina mecânica</option>
-          <option value="car_wash">Lava-rápido</option>
-          <option value="car_dealer">Concessionária</option>
-          <option value="car_rental">Locadora de veículos</option>
-          <option value="parking">Estacionamento</option>
-          <option value="airport">Aeroporto</option>
-          <option value="train_station">Estação de trem</option>
-          <option value="subway_station">Estação de metrô</option>
-          <option value="bus_station">Rodoviária</option>
-          <option value="taxi_stand">Ponto de táxi</option>
+        <optgroup label="Transporte e automotivo">
+          <option value="gas_station">Posto de combustivel</option>
+          <option value="electric_vehicle_charging_station">Recarga eletrica</option>
+          <option value="car_repair">Oficina mecanica</option>
+          <option value="car_wash">Lava-rapido</option>
+          <option value="car_dealer">Concessionaria</option>
+          <option value="car_rental">Locadora de veiculos</option>
+          <option value="parking">Estacionamento</option><option value="airport">Aeroporto</option>
+          <option value="train_station">Estacao de trem</option>
+          <option value="subway_station">Estacao de metro</option>
+          <option value="bus_station">Rodoviaria</option>
+          <option value="taxi_stand">Ponto de taxi</option>
         </optgroup>
-        <optgroup label="🎓 Educação">
-          <option value="school">Escola</option>
-          <option value="preschool">Educação infantil</option>
+        <optgroup label="Educacao">
+          <option value="school">Escola</option><option value="preschool">Educacao infantil</option>
           <option value="primary_school">Ensino fundamental</option>
-          <option value="secondary_school">Ensino médio</option>
+          <option value="secondary_school">Ensino medio</option>
           <option value="university">Universidade</option>
         </optgroup>
-        <optgroup label="💇 Beleza e cuidados">
-          <option value="beauty_salon">Salão de beleza</option>
+        <optgroup label="Beleza e cuidados">
+          <option value="beauty_salon">Salao de beleza</option>
           <option value="hair_salon">Cabeleireiro</option>
-          <option value="barber_shop">Barbearia</option>
-          <option value="nail_salon">Manicure</option>
-          <option value="spa">Spa</option>
-          <option value="laundry">Lavanderia</option>
+          <option value="barber_shop">Barbearia</option><option value="nail_salon">Manicure</option>
+          <option value="spa">Spa</option><option value="laundry">Lavanderia</option>
         </optgroup>
-        <optgroup label="⛪ Religião">
-          <option value="church">Igreja</option>
-          <option value="mosque">Mesquita</option>
-          <option value="synagogue">Sinagoga</option>
-          <option value="hindu_temple">Templo hindu</option>
+        <optgroup label="Religiao">
+          <option value="church">Igreja</option><option value="mosque">Mesquita</option>
+          <option value="synagogue">Sinagoga</option><option value="hindu_temple">Templo hindu</option>
         </optgroup>
-        <optgroup label="🏛️ Público e serviços gerais">
-          <option value="post_office">Correios</option>
-          <option value="police">Polícia</option>
-          <option value="fire_station">Bombeiros</option>
-          <option value="city_hall">Prefeitura</option>
-          <option value="courthouse">Fórum</option>
-          <option value="embassy">Embaixada</option>
-          <option value="local_government_office">Órgão público</option>
-          <option value="cemetery">Cemitério</option>
-          <option value="funeral_home">Funerária</option>
-          <option value="storage">Guarda-móveis</option>
-          <option value="moving_company">Mudanças</option>
-          <option value="plumber">Encanador</option>
-          <option value="electrician">Eletricista</option>
-          <option value="painter">Pintor</option>
+        <optgroup label="Publico e servicos gerais">
+          <option value="post_office">Correios</option><option value="police">Policia</option>
+          <option value="fire_station">Bombeiros</option><option value="city_hall">Prefeitura</option>
+          <option value="courthouse">Forum</option><option value="embassy">Embaixada</option>
+          <option value="local_government_office">Orgao publico</option>
+          <option value="cemetery">Cemiterio</option><option value="funeral_home">Funeraria</option>
+          <option value="storage">Guarda-moveis</option>
+          <option value="moving_company">Mudancas</option><option value="plumber">Encanador</option>
+          <option value="electrician">Eletricista</option><option value="painter">Pintor</option>
           <option value="roofing_contractor">Telhadista</option>
         </optgroup>
       </select>
-    </div>
-
-    <div class="fg" style="margin-top:-4px">
-      <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="ampla" checked style="width:auto;margin:0">
-        Incluir categorias secundárias (busca ampla)
-      </label>
-      <div class="hint">Marcado, um lugar classificado como "cafeteria" que também serve refeições aparece em Restaurante.</div>
+      <div class="hint" id="hintCat">Sem categoria, lista os locais mais avaliados de qualquer tipo.</div>
     </div>
 
     <div class="fg">
-      <label>📏 Raio em km — máximo 50</label>
-      <input type="number" id="raio" value="5" min="1" max="50">
-      <div class="hint" id="hint">O Google Maps aceita no máximo 50 km por busca.</div>
+      <label class="check" for="ampla">
+        <input type="checkbox" id="ampla" checked>
+        <span>Incluir categorias secundarias</span>
+      </label>
     </div>
 
-    <button id="btn" disabled>Carregando…</button>
+    <div class="fg">
+      <label>Raio em km <span class="opc">&mdash; maximo 50</span></label>
+      <input type="number" id="raio" value="5" min="1" max="50">
+      <div class="hint" id="hint">O Google Maps aceita no maximo 50 km por busca.</div>
+    </div>
+
+    <button class="principal" id="btn">Buscar ranking</button>
   </div>
 
-  <div class="loader" id="loader"><div class="spin"></div><p>Buscando…</p></div>
-  <div id="count" class="count"></div>
+  <div class="loader" id="loader"><div class="spin"></div><p>Buscando&hellip;</p></div>
+  <div id="resumo"></div>
   <div id="lista"></div>
-
   <footer>Direitos reservados @LeandroRSouza</footer>
 </div>
 
 <script>
-(function(){
-  const sp = document.getElementById('splash');
-  let fechada = false;
-  function fecha(){
-    if(fechada) return;
-    fechada = true;
-    sp.classList.add('oculta');
-    setTimeout(function(){ if(sp.parentNode) sp.parentNode.removeChild(sp); }, 700);
-  }
-  setTimeout(fecha, 1900);
-  sp.addEventListener('click', fecha);
-})();
+/* ===================================================================
+   Nenhuma chave de API neste arquivo.
+   Todas as chamadas passam por /api/places, onde a chave fica.
+   =================================================================== */
 
-const API_KEY = 'AIzaSyBHMhqA68bmKHz9sAcx0uTJTNJHc6DdGjo';
+const API = '/api/places';
+const K_ID = 'mf_aparelho';
+const K_CH = 'mf_chave';
 const RAIO_MAX = 50;
 
-let Place, RankPref, centro = null, nomeRef = '';
+let centro = null, nomeRef = '', idAtual = '', chaveAtual = '';
 
+function idAparelho(){
+  let id = null;
+  try{ id = localStorage.getItem(K_ID); }catch(e){}
+  if(!id){
+    const alf = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const b = new Uint8Array(8);
+    window.crypto.getRandomValues(b);
+    id = '';
+    for(let i=0;i<8;i++) id += alf[b[i] % alf.length];
+    try{ localStorage.setItem(K_ID, id); }catch(e){}
+  }
+  return id;
+}
+
+async function chamar(corpo){
+  const r = await fetch(API, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(Object.assign({aparelho:idAtual, chave:chaveAtual}, corpo))
+  });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.erro || ('Erro ' + r.status));
+  return d;
+}
+
+/* ---------------- ativacao ---------------- */
+function mostraApp(){
+  document.getElementById('gate').classList.remove('ativo');
+  document.getElementById('app').style.display = '';
+}
+function mostraGate(){
+  document.getElementById('codAparelho').textContent = idAtual;
+  document.getElementById('linkContato').href =
+    'mailto:seu-email@exemplo.com?subject=Ativacao%20Maps%20Finder&body=' +
+    encodeURIComponent('Codigo do aparelho: ' + idAtual);
+  document.getElementById('gate').classList.add('ativo');
+}
+function msgGate(txt, bom){
+  const m = document.getElementById('msgGate');
+  m.textContent = txt;
+  m.className = 'msgGate show ' + (bom ? 'bom' : 'ruim');
+}
+
+document.getElementById('btnCopiar').addEventListener('click', function(){
+  const b = this;
+  const fim = function(){ b.textContent='Copiado'; setTimeout(function(){b.textContent='Copiar';},1600); };
+  if(navigator.clipboard) navigator.clipboard.writeText(idAtual).then(fim, fim); else fim();
+});
+
+document.getElementById('chaveEntrada').addEventListener('input', function(){
+  const v = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
+  this.value = v.replace(/(.{4})(?=.)/g,'$1-');
+});
+
+document.getElementById('btnAtivar').addEventListener('click', async function(){
+  const digitada = document.getElementById('chaveEntrada').value.trim().toUpperCase();
+  if(digitada.length < 14){ msgGate('Digite a chave completa.', false); return; }
+  this.disabled = true;
+  try{
+    const r = await fetch(API, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({acao:'ativar', aparelho:idAtual, chave:digitada})
+    });
+    const d = await r.json();
+    if(d.ok){
+      chaveAtual = digitada;
+      try{ localStorage.setItem(K_CH, digitada); }catch(e){}
+      msgGate('Aparelho ativado. Abrindo\u2026', true);
+      setTimeout(mostraApp, 700);
+    }else{
+      msgGate('Chave invalida para este aparelho.', false);
+    }
+  }catch(e){
+    msgGate('Nao foi possivel verificar agora. Tente de novo.', false);
+  }
+  this.disabled = false;
+});
+
+document.getElementById('chaveEntrada').addEventListener('keypress', function(e){
+  if(e.key === 'Enter') document.getElementById('btnAtivar').click();
+});
+
+/* ---------------- sugestoes de lugar ---------------- */
+let tempo = null, indiceSel = -1, sugAtuais = [];
+const campoLocal = document.getElementById('local');
+const caixaSug = document.getElementById('sugestoes');
+
+campoLocal.addEventListener('input', function(){
+  centro = null;
+  const texto = this.value.trim();
+  clearTimeout(tempo);
+  if(texto.length < 2){ fechaSug(); return; }
+  tempo = setTimeout(async function(){
+    try{
+      const d = await chamar({acao:'sugestoes', texto: texto});
+      desenhaSug(d.sugestoes || []);
+    }catch(e){ fechaSug(); }
+  }, 320);
+});
+
+function desenhaSug(lista){
+  sugAtuais = lista; indiceSel = -1;
+  if(!lista.length){ fechaSug(); return; }
+  caixaSug.innerHTML = lista.map(function(s,i){
+    return '<div class="sug" data-i="'+i+'">'+ s.texto +'</div>';
+  }).join('');
+  caixaSug.classList.add('show');
+  Array.prototype.forEach.call(caixaSug.querySelectorAll('.sug'), function(el){
+    el.addEventListener('mousedown', function(ev){
+      ev.preventDefault();
+      escolhe(parseInt(el.getAttribute('data-i'),10));
+    });
+  });
+}
+function fechaSug(){ caixaSug.classList.remove('show'); caixaSug.innerHTML=''; sugAtuais=[]; indiceSel=-1; }
+
+async function escolhe(i){
+  const s = sugAtuais[i];
+  if(!s) return;
+  campoLocal.value = s.texto;
+  fechaSug();
+  document.getElementById('hintLocal').textContent = 'Carregando local\u2026';
+  try{
+    const d = await chamar({acao:'lugar', id: s.id});
+    centro = {lat: d.lat, lng: d.lng};
+    nomeRef = d.nome || s.texto;
+    document.getElementById('hintLocal').textContent = 'Referencia definida: ' + nomeRef;
+  }catch(e){
+    document.getElementById('hintLocal').textContent = 'Nao foi possivel obter as coordenadas.';
+  }
+}
+
+campoLocal.addEventListener('keydown', function(e){
+  if(!caixaSug.classList.contains('show')) return;
+  const itens = caixaSug.querySelectorAll('.sug');
+  if(e.key === 'ArrowDown'){ e.preventDefault(); indiceSel = Math.min(indiceSel+1, itens.length-1); }
+  else if(e.key === 'ArrowUp'){ e.preventDefault(); indiceSel = Math.max(indiceSel-1, 0); }
+  else if(e.key === 'Enter'){ e.preventDefault(); if(indiceSel >= 0) escolhe(indiceSel); return; }
+  else if(e.key === 'Escape'){ fechaSug(); return; }
+  else return;
+  Array.prototype.forEach.call(itens, function(el,i){ el.classList.toggle('sel', i===indiceSel); });
+});
+campoLocal.addEventListener('blur', function(){ setTimeout(fechaSug, 150); });
+
+/* ---------------- avisos dos campos ---------------- */
+document.getElementById('categoria').addEventListener('change', function(){
+  document.getElementById('hintCat').textContent = this.value
+    ? 'Mostra apenas locais desta categoria.'
+    : 'Sem categoria, lista os locais mais avaliados de qualquer tipo.';
+});
+
+document.getElementById('raio').addEventListener('input', function(){
+  const km = parseInt(this.value)||0;
+  const h = document.getElementById('hint');
+  if(km > RAIO_MAX){
+    this.classList.add('invalido'); h.classList.add('alerta');
+    h.textContent = 'Maximo 50 km. O valor sera ajustado para 50 ao buscar.';
+  }else{
+    this.classList.remove('invalido'); h.classList.remove('alerta');
+    h.textContent = 'O Google Maps aceita no maximo 50 km por busca.';
+  }
+});
+
+/* ---------------- busca ---------------- */
 function erro(msg){ const e=document.getElementById('erro'); e.innerHTML=msg; e.classList.add('show'); }
 function limpaErro(){ document.getElementById('erro').classList.remove('show'); }
 function loader(v){
   document.getElementById('loader').classList.toggle('show', v);
   document.getElementById('btn').disabled = v;
 }
-
-document.getElementById('raio').addEventListener('input', function(){
-  const km = parseInt(this.value)||0;
-  const h = document.getElementById('hint');
-  if(km > RAIO_MAX){
-    this.classList.add('invalido');
-    h.classList.add('alerta');
-    h.textContent = 'Máximo 50 km. O valor será ajustado para 50 ao buscar.';
-  }else{
-    this.classList.remove('invalido');
-    h.classList.remove('alerta');
-    h.textContent = 'O Google Maps aceita no máximo 50 km por busca.';
-  }
-});
-
-(function carregarMaps(){
-  const s = document.createElement('script');
-  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + API_KEY + '&v=weekly&libraries=places&language=pt-BR&region=BR&loading=async&callback=initApp';
-  s.async = true;
-  s.onerror = function(){ erro('Não foi possível carregar o Google Maps.'); };
-  document.head.appendChild(s);
-})();
-
-window.initApp = async function(){
-  try{
-    const places = await google.maps.importLibrary('places');
-    Place = places.Place;
-    RankPref = places.SearchNearbyRankPreference;
-
-    const ac = new places.PlaceAutocompleteElement();
-    document.getElementById('acbox').appendChild(ac);
-
-    async function onSelect(ev){
-      limpaErro();
-      const pred = ev.placePrediction || (ev.detail && ev.detail.placePrediction);
-      if(!pred) return;
-      const place = pred.toPlace();
-      await place.fetchFields({fields:['location','displayName','formattedAddress']});
-      centro = place.location;
-      nomeRef = place.displayName || place.formattedAddress || '';
-    }
-    ac.addEventListener('gmp-select', onSelect);
-    ac.addEventListener('gmp-placeselect', onSelect);
-
-    const btn = document.getElementById('btn');
-    btn.textContent = 'Buscar ranking';
-    btn.disabled = false;
-    btn.addEventListener('click', buscar);
-  }catch(e){
-    erro('Erro ao iniciar: ' + e.message);
-  }
-};
-
-function retangulo(c, raioKm){
-  const lat=c.lat(), lng=c.lng();
-  const dLat=raioKm/111;
-  const cos=Math.cos(lat*Math.PI/180);
-  const dLng=raioKm/(111*(Math.abs(cos)<0.01?0.01:cos));
-  return new google.maps.LatLngBounds(
-    new google.maps.LatLng(Math.max(-85,lat-dLat), Math.max(-179.9,lng-dLng)),
-    new google.maps.LatLng(Math.min(85,lat+dLat), Math.min(179.9,lng+dLng))
-  );
-}
-
 function distanciaKm(a, b){
   const R=6371, r=Math.PI/180;
-  const dLat=(b.lat()-a.lat())*r, dLng=(b.lng()-a.lng())*r;
-  const x=Math.sin(dLat/2)**2 + Math.cos(a.lat()*r)*Math.cos(b.lat()*r)*Math.sin(dLng/2)**2;
+  const dLat=(b.lat-a.lat)*r, dLng=(b.lng-a.lng)*r;
+  const x=Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)*Math.sin(dLng/2);
   return 2*R*Math.asin(Math.sqrt(x));
 }
 
-async function buscar(){
+document.getElementById('btn').addEventListener('click', async function(){
   limpaErro();
   document.getElementById('lista').innerHTML = '';
-  document.getElementById('count').textContent = '';
+  document.getElementById('resumo').innerHTML = '';
 
-  if(!centro){
-    erro('Escolha um ponto de referência na lista de sugestões.');
-    return;
-  }
+  if(!centro){ erro('Escolha um ponto de referencia na lista de sugestoes.'); return; }
 
   const campoRaio = document.getElementById('raio');
   const pedido = parseInt(campoRaio.value)||5;
   const raioKm = Math.min(RAIO_MAX, Math.max(1, pedido));
-
   if(pedido > RAIO_MAX){
     campoRaio.value = RAIO_MAX;
     campoRaio.classList.remove('invalido');
     const h = document.getElementById('hint');
     h.classList.remove('alerta');
-    h.textContent = 'O Google Maps aceita no máximo 50 km por busca.';
-    erro('O raio de ' + pedido + ' km foi ajustado para 50 km, que é o máximo permitido pelo Google Maps.');
+    h.textContent = 'O Google Maps aceita no maximo 50 km por busca.';
+    erro('O raio de ' + pedido + ' km foi ajustado para 50 km, o maximo permitido.');
   }
 
   const sel = document.getElementById('categoria');
   const tipo = sel.value;
-  const rotulo = sel.options[sel.selectedIndex].text;
+  const rotulo = tipo ? sel.options[sel.selectedIndex].text : 'Todas as categorias';
   const ampla = document.getElementById('ampla').checked;
   const nomeBusca = document.getElementById('nome').value.trim();
-
-  const campos = ['displayName','formattedAddress','location','rating','userRatingCount','id'];
-
+  document.querySelector('#loader p').textContent = 'Varrendo a area\u2026';
   loader(true);
   try{
-    let places;
-
+    let locais, d;
     if(nomeBusca){
-      const r = await Place.searchByText({
-        textQuery: nomeBusca,
-        fields: campos,
-        locationRestriction: retangulo(centro, raioKm),
-        includedType: tipo,
-        maxResultCount: 20,
-        language: 'pt-BR'
-      });
-      places = (r.places||[]).filter(function(p){
-        return p.location ? distanciaKm(centro, p.location) <= raioKm : true;
-      });
+      d = await chamar({acao:'porNome', texto:nomeBusca, tipo:tipo,
+        lat:centro.lat, lng:centro.lng, raio: raioKm*1000});
     }else{
-      const r = await Place.searchNearby({
-        fields: campos,
-        locationRestriction: { center: centro, radius: raioKm * 1000 },
-        [ampla ? 'includedTypes' : 'includedPrimaryTypes']: [tipo],
-        maxResultCount: 20,
-        rankPreference: RankPref.POPULARITY,
-        language: 'pt-BR'
-      });
-      places = r.places;
+      d = await chamar({acao:'proximos', lat:centro.lat, lng:centro.lng,
+        raio: raioKm*1000, tipo:tipo, ampla:ampla});
     }
-
+    locais = d.locais || [];
     loader(false);
-    if(!places || !places.length){
+
+    if(!locais.length){
       erro(nomeBusca
-        ? 'Nenhuma unidade de "' + nomeBusca + '" na categoria ' + rotulo + ' nesse raio. Tente aumentar o raio ou conferir a categoria.'
-        : 'Nenhum resultado para "' + rotulo + '" nesse raio. Tente aumentar o raio ou trocar a categoria.');
+        ? 'Nenhuma unidade de "' + nomeBusca + '" encontrada nesse raio.'
+        : 'Nenhum resultado nesse raio. Tente aumentar o raio ou trocar a categoria.');
       return;
     }
 
-    const lista = places.slice();
-    lista.sort(function(a,b){ return (b.userRatingCount||0) - (a.userRatingCount||0); });
-    render(lista, raioKm, rotulo, ampla, nomeBusca);
+    locais.sort(function(a,b){ return b.avaliacoes - a.avaliacoes; });
+    render(locais, raioKm, rotulo, ampla, nomeBusca, d.chamadas || 1);
   }catch(e){
     loader(false);
-    erro('Erro na busca: ' + ((e && e.message) ? e.message : String(e)));
+    erro('Erro na busca: ' + e.message);
   }
-}
+});
 
-function render(locais, raioKm, rotulo, ampla, nomeBusca){
-  const titulo = nomeBusca ? ('"' + nomeBusca + '" · ' + rotulo) : rotulo;
-  const modo = nomeBusca ? 'por nome' : ('busca ' + (ampla ? 'ampla' : 'estrita'));
-  document.getElementById('count').innerHTML =
-    '<b>' + titulo + '</b> — ' + locais.length + ' locais num raio de ' + raioKm + ' km de <b>' + nomeRef + '</b><br>' +
-    'Ordenado por número de avaliações · ' + modo;
+function render(locais, raioKm, rotulo, ampla, nomeBusca, chamadas){
+  const titulo = nomeBusca ? ('"' + nomeBusca + '" \u00b7 ' + rotulo) : rotulo;
+  const modo = nomeBusca ? 'busca por nome' : (ampla ? 'busca ampla' : 'busca estrita');
+  document.getElementById('resumo').innerHTML =
+    '<div class="resumo"><b>' + titulo + '</b> \u2014 ' + locais.length +
+    ' locais num raio de ' + raioKm + ' km de <b>' + nomeRef + '</b>' +
+    '<span class="sub">Ordenado por numero de avaliacoes \u00b7 ' + modo +
+    (chamadas > 1 ? ' \u00b7 varredura em ' + chamadas + ' setores' : '') + '</span></div>';
 
   let html = '';
-  for(var i=0;i<locais.length;i++){
+  for(let i=0;i<locais.length;i++){
     const p = locais[i];
-    const total = p.userRatingCount || 0;
-    const nota = p.rating ? p.rating.toFixed(1) : '—';
-    const nome = p.displayName || '(sem nome)';
-    const end = p.formattedAddress || '';
+    const dist = (p.lat!==null) ? distanciaKm(centro, p) : null;
     const url = 'https://www.google.com/maps/search/?api=1&query=' +
-                encodeURIComponent(nome) + '&query_place_id=' + p.id;
-    html += '<div class="card">' +
-      '<div><span class="pos">' + (i+1) + '</span><span class="nome">' + nome + '</span></div>' +
-      '<div class="end">' + end + '</div>' +
-      '<div><span class="badge destaque">💬 ' + total + ' avaliações</span>' +
-      '<span class="badge">⭐ ' + nota + '</span></div>' +
-      '<div style="margin-top:8px"><a class="maps" href="' + url + '" target="_blank">Abrir no Google Maps →</a></div>' +
-      '</div>';
+                encodeURIComponent(p.nome) + '&query_place_id=' + p.id;
+    const classe = i===0 ? ' p1' : (i===1 ? ' p2' : (i===2 ? ' p3' : ''));
+    html += '<div class="card" style="animation-delay:' + Math.min(i*35,500) + 'ms">' +
+      '<div class="linha1"><span class="pos'+classe+'">'+(i+1)+'</span>' +
+      '<span class="nome">'+p.nome+'</span></div>' +
+      '<div class="end">'+p.endereco+'</div>' +
+      '<div class="tags">' +
+        '<span class="badge forte">'+p.avaliacoes.toLocaleString('pt-BR')+' avaliacoes</span>' +
+        (p.nota ? '<span class="badge nota">\u2605 '+p.nota.toFixed(1)+'</span>' : '') +
+        (dist!==null ? '<span class="badge">'+dist.toFixed(1)+' km</span>' : '') +
+        '<a class="maps" href="'+url+'" target="_blank" rel="noopener">Ver no mapa</a>' +
+      '</div></div>';
   }
   document.getElementById('lista').innerHTML = html;
 }
+
+/* ---------------- entrada ---------------- */
+(function(){
+  idAtual = idAparelho();
+  try{ chaveAtual = localStorage.getItem(K_CH) || ''; }catch(e){}
+
+  const sp = document.getElementById('splash');
+  let fechada = false;
+  async function fecha(){
+    if(fechada) return;
+    fechada = true;
+    sp.classList.add('oculta');
+    setTimeout(function(){ if(sp.parentNode) sp.parentNode.removeChild(sp); }, 800);
+
+    if(!chaveAtual){ mostraGate(); return; }
+    try{
+      const r = await fetch(API, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({acao:'ativar', aparelho:idAtual, chave:chaveAtual})
+      });
+      const d = await r.json();
+      if(d.ok) mostraApp(); else mostraGate();
+    }catch(e){ mostraGate(); }
+  }
+  setTimeout(fecha, 4000);
+  sp.addEventListener('click', fecha);
+})();
 </script>
 </body>
 </html>
