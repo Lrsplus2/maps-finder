@@ -51,6 +51,34 @@ select{appearance:none;-webkit-appearance:none;
 optgroup{font-weight:700;color:var(--roxo-txt);background:#fff}
 option{font-weight:400;color:var(--texto);background:#fff}
 
+.seletor-cat{width:100%;padding:13px 14px;border:1.5px solid var(--borda);border-radius:12px;
+  background:var(--campo);font-size:15px;font-family:inherit;color:var(--texto);
+  display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left}
+.seletor-cat:focus{outline:none;border-color:var(--roxo);background:#fff;
+  box-shadow:0 0 0 4px rgba(102,126,234,.14)}
+.seletor-cat .seta{color:#9092a8;font-size:12px;margin-left:8px}
+#resumoCat{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+
+.painel-cat{position:fixed;inset:0;z-index:8000;display:none;flex-direction:column;
+  background:rgba(20,16,50,.55);padding:16px;align-items:flex-end;justify-content:flex-end}
+.painel-cat.show{display:flex}
+.painel-cat-topo{background:#fff;width:100%;max-width:560px;margin:0 auto;
+  border-radius:16px 16px 0 0;padding:16px 18px 4px;display:flex;align-items:center;
+  justify-content:space-between;font-weight:700;font-size:15px;color:var(--texto)}
+.link-limpar{border:none;background:none;color:var(--roxo);font-weight:600;font-size:13px;
+  cursor:pointer;font-family:inherit;padding:6px 4px}
+.painel-cat-lista{background:#fff;width:100%;max-width:560px;margin:0 auto;
+  max-height:60vh;overflow-y:auto;padding:4px 18px 6px}
+.painel-cat #btnAplicarCat{max-width:560px;margin:12px auto 0;border-radius:12px 12px 16px 16px}
+.chk-grupo{margin-bottom:6px}
+.chk-grupo-titulo{font-size:12px;font-weight:700;color:var(--roxo-txt);
+  text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px;
+  border-top:1px solid #f0f0f5;padding-top:12px}
+.chk-grupo:first-child .chk-grupo-titulo{border-top:none;margin-top:6px;padding-top:0}
+.chk-item{display:flex;align-items:center;gap:10px;padding:8px 2px;cursor:pointer;
+  font-size:14.5px;color:var(--texto)}
+.chk-item input{width:18px;height:18px;margin:0;accent-color:var(--roxo);flex:none}
+
 .sugestoes{position:absolute;top:100%;left:0;right:0;margin-top:5px;background:#fff;
   border:1.5px solid var(--borda);border-radius:12px;box-shadow:0 12px 28px rgba(28,20,70,.18);
   max-height:230px;overflow-y:auto;display:none;z-index:50}
@@ -221,122 +249,173 @@ footer{text-align:center;color:rgba(255,255,255,.72);font-size:11.5px;margin:26p
 
     <div class="fg">
       <label>Categoria</label>
-      <select id="categoria">
-        <option value="">Todas as categorias</option>
-        <optgroup label="Comida e bebida">
-          <option value="restaurant">Restaurante</option><option value="cafe">Cafeteria</option>
-          <option value="coffee_shop">Casa de cafe</option><option value="bakery">Padaria</option>
-          <option value="bar">Bar</option><option value="pub">Pub</option>
-          <option value="wine_bar">Wine bar</option><option value="night_club">Casa noturna</option>
-          <option value="pizza_restaurant">Pizzaria</option>
-          <option value="hamburger_restaurant">Hamburgueria</option>
-          <option value="japanese_restaurant">Restaurante japones</option>
-          <option value="sushi_restaurant">Sushi</option>
-          <option value="italian_restaurant">Restaurante italiano</option>
-          <option value="chinese_restaurant">Restaurante chines</option>
-          <option value="brazilian_restaurant">Restaurante brasileiro</option>
-          <option value="steak_house">Churrascaria</option>
-          <option value="seafood_restaurant">Frutos do mar</option>
-          <option value="vegetarian_restaurant">Vegetariano</option>
-          <option value="fast_food_restaurant">Fast food</option>
-          <option value="sandwich_shop">Sanduicheria</option>
-          <option value="ice_cream_shop">Sorveteria</option>
-          <option value="dessert_shop">Doceria</option>
-        </optgroup>
-        <optgroup label="Hospedagem">
-          <option value="hotel">Hotel</option><option value="motel">Motel</option>
-          <option value="resort_hotel">Resort</option>
-          <option value="bed_and_breakfast">Pousada</option>
-          <option value="guest_house">Hospedaria</option><option value="campground">Camping</option>
-        </optgroup>
-        <optgroup label="Esporte e lazer">
-          <option value="gym">Academia</option><option value="fitness_center">Centro fitness</option>
-          <option value="yoga_studio">Estudio de yoga</option>
-          <option value="swimming_pool">Piscina</option><option value="park">Parque</option>
-          <option value="national_park">Parque nacional</option>
-          <option value="dog_park">Parque para caes</option>
-          <option value="playground">Playground</option><option value="stadium">Estadio</option>
-          <option value="amusement_park">Parque de diversoes</option>
-        </optgroup>
-        <optgroup label="Cultura e turismo">
-          <option value="tourist_attraction">Atracao turistica</option>
-          <option value="museum">Museu</option><option value="art_gallery">Galeria de arte</option>
-          <option value="zoo">Zoologico</option><option value="aquarium">Aquario</option>
-          <option value="movie_theater">Cinema</option>
-          <option value="performing_arts_theater">Teatro</option>
-          <option value="library">Biblioteca</option>
-        </optgroup>
-        <optgroup label="Compras">
-          <option value="shopping_mall">Shopping center</option>
-          <option value="supermarket">Supermercado</option>
-          <option value="grocery_store">Mercearia</option>
-          <option value="convenience_store">Loja de conveniencia</option>
-          <option value="department_store">Loja de departamentos</option>
-          <option value="clothing_store">Loja de roupas</option>
-          <option value="shoe_store">Loja de calcados</option>
-          <option value="electronics_store">Eletronicos</option>
-          <option value="furniture_store">Moveis</option>
-          <option value="hardware_store">Material de construcao</option>
-          <option value="jewelry_store">Joalheria</option><option value="book_store">Livraria</option>
-          <option value="pet_store">Pet shop</option><option value="florist">Floricultura</option>
-        </optgroup>
-        <optgroup label="Saude">
-          <option value="hospital">Hospital</option><option value="doctor">Consultorio medico</option>
-          <option value="dentist">Dentista</option><option value="pharmacy">Farmacia</option>
-          <option value="drugstore">Drogaria</option>
-          <option value="physiotherapist">Fisioterapeuta</option>
-          <option value="veterinary_care">Veterinario</option>
-        </optgroup>
-        <optgroup label="Financas e servicos">
-          <option value="bank">Banco</option><option value="atm">Caixa eletronico</option>
-          <option value="accounting">Contabilidade</option>
-          <option value="insurance_agency">Seguradora</option>
-          <option value="real_estate_agency">Imobiliaria</option>
-          <option value="lawyer">Advocacia</option>
-          <option value="travel_agency">Agencia de viagens</option>
-        </optgroup>
-        <optgroup label="Transporte e automotivo">
-          <option value="gas_station">Posto de combustivel</option>
-          <option value="electric_vehicle_charging_station">Recarga eletrica</option>
-          <option value="car_repair">Oficina mecanica</option>
-          <option value="car_wash">Lava-rapido</option>
-          <option value="car_dealer">Concessionaria</option>
-          <option value="car_rental">Locadora de veiculos</option>
-          <option value="parking">Estacionamento</option><option value="airport">Aeroporto</option>
-          <option value="train_station">Estacao de trem</option>
-          <option value="subway_station">Estacao de metro</option>
-          <option value="bus_station">Rodoviaria</option>
-          <option value="taxi_stand">Ponto de taxi</option>
-        </optgroup>
-        <optgroup label="Educacao">
-          <option value="school">Escola</option><option value="preschool">Educacao infantil</option>
-          <option value="primary_school">Ensino fundamental</option>
-          <option value="secondary_school">Ensino medio</option>
-          <option value="university">Universidade</option>
-        </optgroup>
-        <optgroup label="Beleza e cuidados">
-          <option value="beauty_salon">Salao de beleza</option>
-          <option value="hair_salon">Cabeleireiro</option>
-          <option value="barber_shop">Barbearia</option><option value="nail_salon">Manicure</option>
-          <option value="spa">Spa</option><option value="laundry">Lavanderia</option>
-        </optgroup>
-        <optgroup label="Religiao">
-          <option value="church">Igreja</option><option value="mosque">Mesquita</option>
-          <option value="synagogue">Sinagoga</option><option value="hindu_temple">Templo hindu</option>
-        </optgroup>
-        <optgroup label="Publico e servicos gerais">
-          <option value="post_office">Correios</option><option value="police">Policia</option>
-          <option value="fire_station">Bombeiros</option><option value="city_hall">Prefeitura</option>
-          <option value="courthouse">Forum</option><option value="embassy">Embaixada</option>
-          <option value="local_government_office">Orgao publico</option>
-          <option value="cemetery">Cemiterio</option><option value="funeral_home">Funeraria</option>
-          <option value="storage">Guarda-moveis</option>
-          <option value="moving_company">Mudancas</option><option value="plumber">Encanador</option>
-          <option value="electrician">Eletricista</option><option value="painter">Pintor</option>
-          <option value="roofing_contractor">Telhadista</option>
-        </optgroup>
-      </select>
+      <button type="button" class="seletor-cat" id="btnCategoria">
+        <span id="resumoCat">Todas as categorias</span>
+        <span class="seta">&#9662;</span>
+      </button>
       <div class="hint" id="hintCat">Sem categoria, lista os locais mais avaliados de qualquer tipo.</div>
+    </div>
+
+    <div id="painelCategorias" class="painel-cat">
+      <div class="painel-cat-topo">
+        <span>Escolher categorias</span>
+        <button type="button" id="btnLimparCat" class="link-limpar">Limpar</button>
+      </div>
+      <div class="painel-cat-lista">
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Comida e bebida</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="restaurant"><span>Restaurante</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="cafe"><span>Cafeteria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="coffee_shop"><span>Casa de cafe</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="bakery"><span>Padaria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="bar"><span>Bar</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="pub"><span>Pub</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="wine_bar"><span>Wine bar</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="night_club"><span>Casa noturna</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="pizza_restaurant"><span>Pizzaria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="hamburger_restaurant"><span>Hamburgueria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="japanese_restaurant"><span>Restaurante japones</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="sushi_restaurant"><span>Sushi</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="italian_restaurant"><span>Restaurante italiano</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="chinese_restaurant"><span>Restaurante chines</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="brazilian_restaurant"><span>Restaurante brasileiro</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="steak_house"><span>Churrascaria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="seafood_restaurant"><span>Frutos do mar</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="vegetarian_restaurant"><span>Vegetariano</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="fast_food_restaurant"><span>Fast food</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="sandwich_shop"><span>Sanduicheria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="ice_cream_shop"><span>Sorveteria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="dessert_shop"><span>Doceria</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Hospedagem</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="hotel"><span>Hotel</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="motel"><span>Motel</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="resort_hotel"><span>Resort</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="bed_and_breakfast"><span>Pousada</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="guest_house"><span>Hospedaria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="campground"><span>Camping</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Esporte e lazer</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="gym"><span>Academia</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="fitness_center"><span>Centro fitness</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="yoga_studio"><span>Estudio de yoga</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="swimming_pool"><span>Piscina</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="park"><span>Parque</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="national_park"><span>Parque nacional</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="dog_park"><span>Parque para caes</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="playground"><span>Playground</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="stadium"><span>Estadio</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="amusement_park"><span>Parque de diversoes</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Cultura e turismo</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="tourist_attraction"><span>Atracao turistica</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="museum"><span>Museu</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="art_gallery"><span>Galeria de arte</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="zoo"><span>Zoologico</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="aquarium"><span>Aquario</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="movie_theater"><span>Cinema</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="performing_arts_theater"><span>Teatro</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="library"><span>Biblioteca</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Compras</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="shopping_mall"><span>Shopping center</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="supermarket"><span>Supermercado</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="grocery_store"><span>Mercearia</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="convenience_store"><span>Loja de conveniencia</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="department_store"><span>Loja de departamentos</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="clothing_store"><span>Loja de roupas</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="shoe_store"><span>Loja de calcados</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="electronics_store"><span>Eletronicos</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="furniture_store"><span>Moveis</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="hardware_store"><span>Material de construcao</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="jewelry_store"><span>Joalheria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="book_store"><span>Livraria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="pet_store"><span>Pet shop</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="florist"><span>Floricultura</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Saude</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="hospital"><span>Hospital</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="doctor"><span>Consultorio medico</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="dentist"><span>Dentista</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="pharmacy"><span>Farmacia</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="drugstore"><span>Drogaria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="physiotherapist"><span>Fisioterapeuta</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="veterinary_care"><span>Veterinario</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Financas e servicos</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="bank"><span>Banco</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="atm"><span>Caixa eletronico</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="accounting"><span>Contabilidade</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="insurance_agency"><span>Seguradora</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="real_estate_agency"><span>Imobiliaria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="lawyer"><span>Advocacia</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="travel_agency"><span>Agencia de viagens</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Transporte e automotivo</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="gas_station"><span>Posto de combustivel</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="electric_vehicle_charging_station"><span>Recarga eletrica</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="car_repair"><span>Oficina mecanica</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="car_wash"><span>Lava-rapido</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="car_dealer"><span>Concessionaria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="car_rental"><span>Locadora de veiculos</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="parking"><span>Estacionamento</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="airport"><span>Aeroporto</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="train_station"><span>Estacao de trem</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="subway_station"><span>Estacao de metro</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="bus_station"><span>Rodoviaria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="taxi_stand"><span>Ponto de taxi</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Educacao</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="school"><span>Escola</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="preschool"><span>Educacao infantil</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="primary_school"><span>Ensino fundamental</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="secondary_school"><span>Ensino medio</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="university"><span>Universidade</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Beleza e cuidados</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="beauty_salon"><span>Salao de beleza</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="hair_salon"><span>Cabeleireiro</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="barber_shop"><span>Barbearia</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="nail_salon"><span>Manicure</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="spa"><span>Spa</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="laundry"><span>Lavanderia</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Religiao</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="church"><span>Igreja</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="mosque"><span>Mesquita</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="synagogue"><span>Sinagoga</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="hindu_temple"><span>Templo hindu</span></label>
+        </div>
+        <div class="chk-grupo">
+          <div class="chk-grupo-titulo">Publico e servicos gerais</div>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="post_office"><span>Correios</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="police"><span>Policia</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="fire_station"><span>Bombeiros</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="city_hall"><span>Prefeitura</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="courthouse"><span>Forum</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="embassy"><span>Embaixada</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="local_government_office"><span>Orgao publico</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="cemetery"><span>Cemiterio</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="funeral_home"><span>Funeraria</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="storage"><span>Guarda-moveis</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="moving_company"><span>Mudancas</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="plumber"><span>Encanador</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="electrician"><span>Eletricista</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="painter"><span>Pintor</span></label>
+          <label class="chk-item"><input type="checkbox" class="chk-cat" value="roofing_contractor"><span>Telhadista</span></label>
+        </div>
+      </div>
+      <button type="button" class="principal" id="btnAplicarCat" style="margin-top:12px">Aplicar</button>
     </div>
 
     <div class="fg">
@@ -518,12 +597,47 @@ campoLocal.addEventListener('keydown', function(e){
 });
 campoLocal.addEventListener('blur', function(){ setTimeout(fechaSug, 150); });
 
-/* ---------------- avisos dos campos ---------------- */
-document.getElementById('categoria').addEventListener('change', function(){
-  document.getElementById('hintCat').textContent = this.value
-    ? 'Mostra apenas locais desta categoria.'
+/* ---------------- selecao de categorias (multipla escolha) ---------------- */
+let categoriasSelecionadas = [];
+
+function textoResumoCat(){
+  const n = categoriasSelecionadas.length;
+  if(n === 0) return 'Todas as categorias';
+  if(n === 1){
+    const cb = document.querySelector('.chk-cat[value="'+categoriasSelecionadas[0]+'"]');
+    return cb ? cb.parentElement.textContent.trim() : '1 categoria';
+  }
+  return n + ' categorias selecionadas';
+}
+
+function atualizaResumoCat(){
+  document.getElementById('resumoCat').textContent = textoResumoCat();
+  document.getElementById('hintCat').textContent = categoriasSelecionadas.length
+    ? 'Mostra locais dessas categorias, combinadas numa unica busca.'
     : 'Sem categoria, lista os locais mais avaliados de qualquer tipo.';
+}
+
+document.getElementById('btnCategoria').addEventListener('click', function(){
+  document.getElementById('painelCategorias').classList.add('show');
 });
+
+document.getElementById('btnAplicarCat').addEventListener('click', function(){
+  categoriasSelecionadas = Array.prototype.slice
+    .call(document.querySelectorAll('.chk-cat:checked'))
+    .map(function(cb){ return cb.value; });
+  atualizaResumoCat();
+  document.getElementById('painelCategorias').classList.remove('show');
+});
+
+document.getElementById('btnLimparCat').addEventListener('click', function(){
+  Array.prototype.forEach.call(document.querySelectorAll('.chk-cat'), function(cb){ cb.checked = false; });
+});
+
+document.getElementById('painelCategorias').addEventListener('click', function(e){
+  if(e.target === this) this.classList.remove('show');
+});
+
+/* ---------------- avisos dos campos ---------------- */
 
 document.getElementById('raio').addEventListener('input', function(){
   const km = parseInt(this.value)||0;
@@ -571,9 +685,8 @@ document.getElementById('btn').addEventListener('click', async function(){
     erro('O raio de ' + pedido + ' km foi ajustado para 50 km, o maximo permitido.');
   }
 
-  const sel = document.getElementById('categoria');
-  const tipo = sel.value;
-  const rotulo = tipo ? sel.options[sel.selectedIndex].text : 'Todas as categorias';
+  const tipos = categoriasSelecionadas.slice();
+  const rotulo = tipos.length ? textoResumoCat() : 'Todas as categorias';
   const ampla = document.getElementById('ampla').checked;
   const nomeBusca = document.getElementById('nome').value.trim();
   document.querySelector('#loader p').textContent = 'Varrendo a area\u2026';
@@ -581,11 +694,11 @@ document.getElementById('btn').addEventListener('click', async function(){
   try{
     let locais, d;
     if(nomeBusca){
-      d = await chamar({acao:'porNome', texto:nomeBusca, tipo:tipo,
+      d = await chamar({acao:'porNome', texto:nomeBusca, tipos:tipos,
         lat:centro.lat, lng:centro.lng, raio: raioKm*1000});
     }else{
       d = await chamar({acao:'proximos', lat:centro.lat, lng:centro.lng,
-        raio: raioKm*1000, tipo:tipo, ampla:ampla});
+        raio: raioKm*1000, tipos:tipos, ampla:ampla});
     }
     locais = d.locais || [];
     loader(false);
@@ -598,21 +711,22 @@ document.getElementById('btn').addEventListener('click', async function(){
     }
 
     locais.sort(function(a,b){ return b.avaliacoes - a.avaliacoes; });
-    render(locais, raioKm, rotulo, ampla, nomeBusca, d.chamadas || 1);
+    render(locais, raioKm, rotulo, ampla, nomeBusca, d.chamadas || 1, d.blocos || 1);
   }catch(e){
     loader(false);
     erro('Erro na busca: ' + e.message);
   }
 });
 
-function render(locais, raioKm, rotulo, ampla, nomeBusca, chamadas){
+function render(locais, raioKm, rotulo, ampla, nomeBusca, chamadas, blocos){
   const titulo = nomeBusca ? ('"' + nomeBusca + '" \u00b7 ' + rotulo) : rotulo;
   const modo = nomeBusca ? 'busca por nome' : (ampla ? 'busca ampla' : 'busca estrita');
   document.getElementById('resumo').innerHTML =
     '<div class="resumo"><b>' + titulo + '</b> \u2014 ' + locais.length +
     ' locais num raio de ' + raioKm + ' km de <b>' + nomeRef + '</b>' +
     '<span class="sub">Ordenado por numero de avaliacoes \u00b7 ' + modo +
-    (chamadas > 1 ? ' \u00b7 varredura em ' + chamadas + ' setores' : '') + '</span></div>';
+    (chamadas > 1 ? ' \u00b7 varredura em ' + chamadas + ' setores' +
+      (blocos > 1 ? ' \u00d7 ' + blocos + ' blocos de categoria' : '') : '') + '</span></div>';
 
   let html = '';
   for(let i=0;i<locais.length;i++){
