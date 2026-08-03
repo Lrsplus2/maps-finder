@@ -1,0 +1,17 @@
+{
+  "name": "Maps Finder",
+  "short_name": "Maps Finder",
+  "description": "Ranking de estabelecimentos por numero de avaliacoes no Google Maps",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#6a55c0",
+  "theme_color": "#667eea",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
