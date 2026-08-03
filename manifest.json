@@ -1,6 +1,6 @@
 {
-  "name": "Maps Finder",
-  "short_name": "Maps Finder",
+  "name": "Busca Map",
+  "short_name": "Busca Map",
   "description": "Ranking de estabelecimentos por numero de avaliacoes no Google Maps",
   "start_url": "./",
   "scope": "./",
