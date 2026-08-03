@@ -40,34 +40,67 @@ const SETORES = 7; // centro + 6 ao redor
 // aparecia na busca sem filtro de tipo -- e passou a aparecer assim que
 // o tipo foi declarado explicitamente.
 //
-// Correcao: quando a busca e "todas as categorias", declara-se TODOS os
-// 116 tipos conhecidos, divididos em blocos de ate 50 (limite da API),
-// e roda-se cada bloco em cada um dos setores do mosaico.
-// Custo: 3 blocos x 7 setores = 21 chamadas, em vez de 7.
+// Correcao: quando a busca e "todas as categorias", declara-se os 116
+// tipos que o app conhece, divididos em 3 blocos de ate 50 (limite da
+// API), e roda-se cada bloco em cada um dos setores do mosaico.
+//
+// ISSO NAO E SUFICIENTE SOZINHO. A Tabela A oficial do Google (types
+// aceitos por includedPrimaryTypes) tem 468 tipos distintos, nao 116 --
+// qualquer estabelecimento cujo tipo primario seja um dos ~350 que
+// faltam ficaria de fora dos 3 blocos. Foi o caso real de um
+// restaurante em Curitiba (17.331 avaliacoes) cujo tipo primario e
+// "cocktail_bar" -- um tipo que nao esta nos 116 do menu do app.
+//
+// Declarar os 468 tipos custaria 10 blocos x 7 setores = 70 chamadas,
+// desproporcional. A solucao adotada foi um 4o bloco SEM QUALQUER
+// FILTRO -- nem includedPrimaryTypes nem excludedPrimaryTypes -- que
+// usa a propria classificacao de popularidade do Google para reunir
+// mais candidatos, incluindo tipos raros fora dos 116 curados.
+//
+// Importante: nada e removido da lista final em nenhum bloco. Os
+// blocos servem so para REUNIR candidatos (o teto de 20 por chamada
+// do Google e a limitacao real); a lista mostrada ao usuario e o
+// conjunto completo e unico de tudo o que foi encontrado nos 4
+// blocos x 7 setores, ordenado por numero de avaliacoes, sem corte
+// artificial em 20 nem em qualquer outro numero.
+//
+// Testado (04/08/2026): sem qualquer filtro no 4o bloco, um
+// restaurante em Curitiba com 15.744 avaliacoes (tipo primario
+// "cocktail_bar", fora dos 116 tipos do menu) apareceu normalmente.
+//
+// Custo final: 4 blocos x 7 setores = 28 chamadas (era 21).
+//
+// LIMITACAO QUE PERMANECE: o teto de 20 resultados por chamada do
+// Google nao desaparece. Se, dentro de um mesmo bloco e setor,
+// houver mais de 20 estabelecimentos com mais avaliacoes que um
+// determinado local, esse local pode nao ser capturado por aquele
+// bloco -- mas os outros 3 blocos e os outros 6 setores do mosaico
+// aumentam bastante a chance de ele ser capturado por algum deles.
 const BLOCOS_TIPOS = [
-  ["restaurant","cafe","coffee_shop","bakery","bar","pub","wine_bar","night_club",
+  { incluir: ["restaurant","cafe","coffee_shop","bakery","bar","pub","wine_bar","night_club",
    "pizza_restaurant","hamburger_restaurant","japanese_restaurant","sushi_restaurant",
    "italian_restaurant","chinese_restaurant","brazilian_restaurant","steak_house",
    "seafood_restaurant","vegetarian_restaurant","fast_food_restaurant","sandwich_shop",
    "ice_cream_shop","dessert_shop","hotel","motel","resort_hotel","bed_and_breakfast",
    "guest_house","campground","gym","fitness_center","yoga_studio","swimming_pool",
    "park","national_park","dog_park","playground","stadium","amusement_park",
-   "tourist_attraction"],
-  ["museum","art_gallery","zoo","aquarium","movie_theater","performing_arts_theater",
+   "tourist_attraction"] },
+  { incluir: ["museum","art_gallery","zoo","aquarium","movie_theater","performing_arts_theater",
    "library","shopping_mall","supermarket","grocery_store","convenience_store",
    "department_store","clothing_store","shoe_store","electronics_store",
    "furniture_store","hardware_store","jewelry_store","book_store","pet_store",
    "florist","hospital","doctor","dentist","pharmacy","drugstore","physiotherapist",
    "veterinary_care","bank","atm","accounting","insurance_agency","real_estate_agency",
    "lawyer","travel_agency","gas_station","electric_vehicle_charging_station",
-   "car_repair","car_wash"],
-  ["car_dealer","car_rental","parking","airport","train_station","subway_station",
+   "car_repair","car_wash"] },
+  { incluir: ["car_dealer","car_rental","parking","airport","train_station","subway_station",
    "bus_station","taxi_stand","school","preschool","primary_school","secondary_school",
    "university","beauty_salon","hair_salon","barber_shop","nail_salon","spa","laundry",
    "church","mosque","synagogue","hindu_temple","post_office","police","fire_station",
    "city_hall","courthouse","embassy","local_government_office","cemetery",
    "funeral_home","storage","moving_company","plumber","electrician","painter",
-   "roofing_contractor"]
+   "roofing_contractor"] },
+  {}
 ];
 
 // contador por dia + aparelho + tipo de contagem — zera a cada reinicio da funcao
@@ -314,8 +347,10 @@ export default async function handler(req, res) {
                   }
                 }
               };
-              if (bloco) {
-                q.includedPrimaryTypes = bloco;
+              if (bloco && bloco.incluir && bloco.incluir.length) {
+                q.includedPrimaryTypes = bloco.incluir;
+              } else if (bloco && bloco.excluir && bloco.excluir.length) {
+                q.excludedPrimaryTypes = bloco.excluir;
               } else if (tipo) {
                 if (corpo.ampla) q.includedTypes = [tipo];
                 else q.includedPrimaryTypes = [tipo];
