@@ -309,13 +309,48 @@ export default async function handler(req, res) {
     const lat = Number(corpo.lat);
     const lng = Number(corpo.lng);
     const raioKm = Math.min(50, Math.max(0.1, Number(corpo.raio) / 1000));
-    const tipo = corpo.tipo;
 
-    // "Todas as categorias" na busca por proximidade: sem tipo declarado,
-    // o Google sub-representa certos comercios (ver nota em BLOCOS_TIPOS).
-    // Precisamos declarar todos os tipos, em blocos, para contornar isso.
-    const semCategoria = acao === 'proximos' && !tipo;
-    const blocos = semCategoria ? BLOCOS_TIPOS : [null];
+    // Suporta selecao de VARIAS categorias. corpo.tipos e um array;
+    // por compatibilidade, tambem aceita corpo.tipo (string unica).
+    const tipos = Array.isArray(corpo.tipos)
+      ? corpo.tipos.filter(Boolean)
+      : (corpo.tipo ? [corpo.tipo] : []);
+
+    // "Todas as categorias" na busca por proximidade: nenhum tipo
+    // declarado. O Google sub-representa certos comercios nesse caso
+    // (ver nota em BLOCOS_TIPOS) -- por isso o modo caro de 4 blocos.
+    const semCategoria = acao === 'proximos' && tipos.length === 0;
+
+    // Nearby Search aceita ate 50 tipos em includedPrimaryTypes numa
+    // SO chamada -- por isso escolher varias categorias nao custa mais
+    // que escolher uma, desde que sejam <= 50 (o menu tem 116 no total,
+    // entao so agrupamos em blocos de 50 no caso raro de selecionar
+    // quase tudo manualmente).
+    const CHUNK = 50;
+    function emBlocosDe50(lista) {
+      const r = [];
+      for (let i = 0; i < lista.length; i += CHUNK) r.push(lista.slice(i, i + CHUNK));
+      return r;
+    }
+
+    // Text Search (busca por nome) so aceita UM tipo por chamada
+    // (includedType, singular). Com varias categorias escolhidas,
+    // rodamos uma chamada por tipo -- mas ate um teto, porque o custo
+    // cresce direto com o numero de tipos. Acima do teto, a busca por
+    // nome ignora a categoria (o texto digitado ja filtra bastante).
+    const TETO_TIPOS_NOME = 6;
+
+    let blocos;
+    if (acao === 'proximos') {
+      blocos = semCategoria ? BLOCOS_TIPOS : emBlocosDe50(tipos).map(function (t) {
+        return { incluir: t };
+      });
+    } else {
+      blocos = (tipos.length === 0 || tipos.length > TETO_TIPOS_NOME)
+        ? [null]
+        : tipos.map(function (t) { return { incluir: [t] }; });
+    }
+
     const tipoContagem = semCategoria ? 'todas' : 'categoria';
     const limiteContagem = semCategoria ? LIMITE_BUSCA_TODAS : LIMITE_BUSCA_CATEGORIA;
 
@@ -348,12 +383,10 @@ export default async function handler(req, res) {
                 }
               };
               if (bloco && bloco.incluir && bloco.incluir.length) {
-                q.includedPrimaryTypes = bloco.incluir;
+                if (!semCategoria && corpo.ampla) q.includedTypes = bloco.incluir;
+                else q.includedPrimaryTypes = bloco.incluir;
               } else if (bloco && bloco.excluir && bloco.excluir.length) {
                 q.excludedPrimaryTypes = bloco.excluir;
-              } else if (tipo) {
-                if (corpo.ampla) q.includedTypes = [tipo];
-                else q.includedPrimaryTypes = [tipo];
               }
               return google(
                 'https://places.googleapis.com/v1/places:searchNearby',
@@ -385,7 +418,9 @@ export default async function handler(req, res) {
                 }
               }
             };
-            if (tipo) q.includedType = tipo;
+            if (bloco && bloco.incluir && bloco.incluir.length === 1) {
+              q.includedType = bloco.incluir[0];
+            }
             return google(
               'https://places.googleapis.com/v1/places:searchText',
               q,
