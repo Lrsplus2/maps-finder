@@ -79,8 +79,18 @@ option{font-weight:400;color:var(--texto);background:#fff}
   font-size:14.5px;color:var(--texto)}
 .chk-item input{width:18px;height:18px;margin:0;accent-color:var(--roxo);flex:none}
 
-.sugestoes{position:absolute;top:100%;left:0;right:0;margin-top:5px;background:#fff;
-  border:1.5px solid var(--borda);border-radius:12px;box-shadow:0 12px 28px rgba(28,20,70,.18);
+.campo-local{position:relative;display:flex;align-items:center}
+.campo-local input{padding-right:52px}
+#btnGPS{position:absolute;right:6px;width:38px;height:38px;border:none;border-radius:10px;
+  background:#eceefb;color:var(--roxo-txt);font-size:17px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;padding:0;transition:background .18s}
+#btnGPS:active{background:#dcdff7}
+#btnGPS.buscando{background:#dcdff7}
+#btnGPS.buscando #iconeGPS{display:inline-block;animation:girando 1s linear infinite}
+#btnGPS.ativo{background:var(--roxo);color:#fff}
+@keyframes girando{to{transform:rotate(360deg)}}
+
+.sugestoes{position:absolute;top:100%;left:0;right:0;margin-top:5px;background:#fff;  border:1.5px solid var(--borda);border-radius:12px;box-shadow:0 12px 28px rgba(28,20,70,.18);
   max-height:230px;overflow-y:auto;display:none;z-index:50}
 .sugestoes.show{display:block}
 .sug{padding:12px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #f1f1f7;line-height:1.4}
@@ -306,10 +316,15 @@ footer{text-align:center;color:rgba(255,255,255,.72);font-size:11.5px;margin:26p
 
     <div class="fg">
       <label>Ponto de referencia</label>
-      <input type="text" id="local" placeholder="Cidade, rua ou estabelecimento"
-             autocomplete="off" spellcheck="false">
+      <div class="campo-local">
+        <input type="text" id="local" placeholder="Cidade, rua ou estabelecimento"
+               autocomplete="off" spellcheck="false">
+        <button type="button" id="btnGPS" title="Usar minha localizacao atual">
+          <span id="iconeGPS">&#127919;</span>
+        </button>
+      </div>
       <div class="sugestoes" id="sugestoes"></div>
-      <div class="hint" id="hintLocal">Digite e escolha uma sugestao da lista.</div>
+      <div class="hint" id="hintLocal">Digite e escolha uma sugestao, ou toque no alvo para usar sua localizacao.</div>
     </div>
 
     <div class="fg">
@@ -636,6 +651,7 @@ const caixaSug = document.getElementById('sugestoes');
 
 campoLocal.addEventListener('input', function(){
   centro = null;
+  desativaModoGPS();
   const texto = this.value.trim();
   clearTimeout(tempo);
   if(texto.length < 2){ fechaSug(); return; }
@@ -690,6 +706,63 @@ campoLocal.addEventListener('keydown', function(e){
   Array.prototype.forEach.call(itens, function(el,i){ el.classList.toggle('sel', i===indiceSel); });
 });
 campoLocal.addEventListener('blur', function(){ setTimeout(fechaSug, 150); });
+
+/* ---------------- localizacao atual (GPS) ---------------- */
+const btnGPS = document.getElementById('btnGPS');
+
+function desativaModoGPS(){
+  btnGPS.classList.remove('ativo');
+}
+
+function estadoGPS(estado){
+  btnGPS.classList.remove('buscando','ativo');
+  if(estado) btnGPS.classList.add(estado);
+}
+
+btnGPS.addEventListener('click', function(){
+  if(!navigator.geolocation){
+    document.getElementById('hintLocal').textContent =
+      'Este navegador nao oferece localizacao. Digite o ponto de referencia.';
+    return;
+  }
+
+  fechaSug();
+  estadoGPS('buscando');
+  campoLocal.value = '';
+  campoLocal.placeholder = 'Obtendo sua localizacao\u2026';
+  document.getElementById('hintLocal').textContent = 'Buscando sinal do GPS\u2026';
+  limpaErro();
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      centro = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      nomeRef = 'Minha localizacao';
+      campoLocal.value = 'Minha localizacao';
+      campoLocal.placeholder = 'Cidade, rua ou estabelecimento';
+      estadoGPS('ativo');
+      const prec = pos.coords.accuracy;
+      document.getElementById('hintLocal').textContent =
+        'Usando sua localizacao atual' +
+        (prec ? ' (precisao de cerca de ' + Math.round(prec) + ' m)' : '') + '.';
+    },
+    function(err){
+      estadoGPS(null);
+      campoLocal.placeholder = 'Cidade, rua ou estabelecimento';
+      let msg;
+      if(err.code === 1){
+        msg = 'Permissao de localizacao negada. Autorize nas configuracoes do navegador ou digite o local.';
+      }else if(err.code === 2){
+        msg = 'Nao foi possivel obter o sinal. Tente em area aberta ou digite o local.';
+      }else if(err.code === 3){
+        msg = 'A localizacao demorou demais. Tente de novo ou digite o local.';
+      }else{
+        msg = 'Nao foi possivel obter sua localizacao. Digite o local.';
+      }
+      document.getElementById('hintLocal').textContent = msg;
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+  );
+});
 
 /* ---------------- selecao de categorias (multipla escolha) ---------------- */
 let categoriasSelecionadas = [];
