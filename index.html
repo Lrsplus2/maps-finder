@@ -1129,7 +1129,7 @@ document.getElementById('campoNomeArq').addEventListener('keypress', function(e)
   }
 });
 
-document.getElementById('btnConfirmaNome').addEventListener('click', function(){
+document.getElementById('btnConfirmaNome').addEventListener('click', async function(){
   const itens = Object.keys(selecionados)
     .map(function(k){ return selecionados[k]; })
     .filter(function(p){ return p.lat != null && p.lng != null; });
@@ -1139,20 +1139,36 @@ document.getElementById('btnConfirmaNome').addEventListener('click', function(){
   if(!base) base = nomeSugerido();
 
   const kml = montaKml(itens, base);
-  const b64 = paraBase64(new TextEncoder().encode(kml));
   const nomeArq = base + '.kml';
+  const bytes = new TextEncoder().encode(kml);
+  const TIPO = 'application/vnd.google-earth.kml+xml';
 
-  // data: URL funciona tanto no Chrome quanto no WebView do APK
-  // (com DownloadListener). blob: nao funciona dentro do WebView.
-  // base64 e usado para preservar os acentos do UTF-8 com seguranca.
+  fechaModalNome();
+
+  // 1) Chrome no Android: abre a folha de compartilhamento, permitindo
+  //    enviar o arquivo direto ao MAPS.ME sem passar pela pasta Downloads.
+  //    O WebView do APK nao implementa Web Share, entao la cai no passo 2,
+  //    onde o DownloadListener salva e abre o MAPS.ME sozinho.
+  try{
+    const arquivo = new File([bytes], nomeArq, { type: TIPO });
+    if(navigator.canShare && navigator.canShare({ files: [arquivo] })){
+      await navigator.share({ files: [arquivo], title: base });
+      return;
+    }
+  }catch(e){
+    // usuario cancelou a folha de compartilhamento: nao baixa nada
+    if(e && e.name === 'AbortError') return;
+    // qualquer outra falha: segue para o download abaixo
+  }
+
+  // 2) download comum (e o caminho usado dentro do APK)
+  const b64 = paraBase64(bytes);
   const a = document.createElement('a');
-  a.href = 'data:application/vnd.google-earth.kml+xml;base64,' + b64;
+  a.href = 'data:' + TIPO + ';base64,' + b64;
   a.download = nomeArq;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-
-  fechaModalNome();
 });
 
 atualizaBarraSel();
