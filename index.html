@@ -166,6 +166,22 @@ button.principal:disabled{opacity:.55;box-shadow:none;cursor:not-allowed}
 #btnFecharSel{background:var(--campo);color:var(--texto)}
 .vazio-sel{text-align:center;color:var(--suave);font-size:13.5px;padding:26px 10px;line-height:1.5}
 
+#modalNome{position:fixed;inset:0;z-index:9300;display:none;align-items:center;
+  justify-content:center;padding:22px;background:rgba(20,16,50,.55)}
+#modalNome.show{display:flex}
+#modalNome .painel{background:#fff;border-radius:18px;padding:22px 20px;width:100%;
+  max-width:360px;box-shadow:0 18px 44px rgba(20,14,50,.30)}
+#modalNome h3{font-size:17px;font-weight:700;color:var(--texto);margin-bottom:6px}
+#modalNome .ajuda{font-size:12.5px;color:var(--suave);line-height:1.5;margin-bottom:14px}
+.linha-nome{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.linha-nome input{flex:1;min-width:0}
+.linha-nome .ext{font-size:14px;font-weight:700;color:var(--suave);flex:none}
+#modalNome .acoes{display:flex;gap:9px}
+#modalNome .acoes button{flex:1;padding:12px;border:none;border-radius:11px;
+  font-family:inherit;font-weight:650;font-size:14px;cursor:pointer}
+#btnCancelaNome{background:var(--campo);color:var(--texto)}
+#btnConfirmaNome{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+
 .pos{flex:none;min-width:27px;height:27px;line-height:27px;text-align:center;border-radius:9px;
   font-size:12.5px;font-weight:700;background:#eef0fb;color:var(--roxo-txt)}
 .pos.p1{background:linear-gradient(135deg,#f6c445,#e8a317);color:#fff}
@@ -614,6 +630,22 @@ footer{text-align:center;color:rgba(255,255,255,.72);font-size:11.5px;margin:26p
   </div>
 </div>
 
+<div id="modalNome">
+  <div class="painel">
+    <h3>Nome do arquivo</h3>
+    <p class="ajuda" id="ajudaNome">Este nome tambem sera o titulo da lista dentro do MAPS.ME.</p>
+    <div class="linha-nome">
+      <input type="text" id="campoNomeArq" autocomplete="off" spellcheck="false"
+             placeholder="busca-map">
+      <span class="ext">.kml</span>
+    </div>
+    <div class="acoes">
+      <button type="button" id="btnCancelaNome">Cancelar</button>
+      <button type="button" id="btnConfirmaNome">Exportar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ===================================================================
    Nenhuma chave de API neste arquivo.
@@ -1001,12 +1033,13 @@ function escapaXml(t){
   });
 }
 
-function montaKml(itens){
+function montaKml(itens, titulo){
   const agora = new Date().toLocaleDateString('pt-BR');
+  const nomeDoc = titulo && titulo.trim() ? titulo.trim() : ('Busca Map \u2014 ' + agora);
   let x = '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<kml xmlns="http://www.opengis.net/kml/2.2">\n' +
     '  <Document>\n' +
-    '    <name>Busca Map \u2014 ' + escapaXml(agora) + '</name>\n' +
+    '    <name>' + escapaXml(nomeDoc) + '</name>\n' +
     '    <description>Locais selecionados no app Busca Map</description>\n' +
     '    <Style id="bm">\n' +
     '      <IconStyle><scale>1.1</scale>\n' +
@@ -1041,6 +1074,27 @@ function paraBase64(bytes){
   return btoa(s);
 }
 
+/* --- escolha do nome do arquivo --- */
+// Nao se usa prompt(): dentro do WebView do APK ele nao abre dialogo
+// nenhum e devolve null em silencio. Este modal funciona nos dois.
+
+function nomeSugerido(){
+  const d = new Date();
+  return 'busca-map-' + d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+
+// remove o que sistemas de arquivo nao aceitam em nomes
+function limpaNomeArquivo(t){
+  return String(t)
+    .replace(/\.kml$/i, '')
+    .replace(/[\/\\:*?"<>|\u0000-\u001f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+}
+
 document.getElementById('btnExportar').addEventListener('click', function(){
   const itens = Object.keys(selecionados)
     .map(function(k){ return selecionados[k]; })
@@ -1051,14 +1105,42 @@ document.getElementById('btnExportar').addEventListener('click', function(){
     return;
   }
 
-  const kml = montaKml(itens);
-  const b64 = paraBase64(new TextEncoder().encode(kml));
+  const campo = document.getElementById('campoNomeArq');
+  campo.value = nomeSugerido();
+  document.getElementById('ajudaNome').textContent =
+    itens.length + (itens.length === 1 ? ' local' : ' locais') +
+    '. Este nome tambem sera o titulo da lista dentro do MAPS.ME.';
+  document.getElementById('modalNome').classList.add('show');
+  setTimeout(function(){ campo.focus(); campo.select(); }, 60);
+});
 
-  const d = new Date();
-  const carimbo = d.getFullYear() + '-' +
-    String(d.getMonth()+1).padStart(2,'0') + '-' +
-    String(d.getDate()).padStart(2,'0');
-  const nomeArq = 'busca-map-' + carimbo + '.kml';
+function fechaModalNome(){
+  document.getElementById('modalNome').classList.remove('show');
+}
+
+document.getElementById('btnCancelaNome').addEventListener('click', fechaModalNome);
+document.getElementById('modalNome').addEventListener('click', function(e){
+  if(e.target === this) fechaModalNome();
+});
+document.getElementById('campoNomeArq').addEventListener('keypress', function(e){
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    document.getElementById('btnConfirmaNome').click();
+  }
+});
+
+document.getElementById('btnConfirmaNome').addEventListener('click', function(){
+  const itens = Object.keys(selecionados)
+    .map(function(k){ return selecionados[k]; })
+    .filter(function(p){ return p.lat != null && p.lng != null; });
+  if(!itens.length){ fechaModalNome(); return; }
+
+  let base = limpaNomeArquivo(document.getElementById('campoNomeArq').value);
+  if(!base) base = nomeSugerido();
+
+  const kml = montaKml(itens, base);
+  const b64 = paraBase64(new TextEncoder().encode(kml));
+  const nomeArq = base + '.kml';
 
   // data: URL funciona tanto no Chrome quanto no WebView do APK
   // (com DownloadListener). blob: nao funciona dentro do WebView.
@@ -1069,6 +1151,8 @@ document.getElementById('btnExportar').addEventListener('click', function(){
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+
+  fechaModalNome();
 });
 
 atualizaBarraSel();
