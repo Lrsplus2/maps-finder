@@ -124,6 +124,48 @@ button.principal:disabled{opacity:.55;box-shadow:none;cursor:not-allowed}
   animation:sobe .34s ease forwards}
 @keyframes sobe{to{opacity:1;transform:translateY(0)}}
 .linha1{display:flex;align-items:flex-start;gap:11px}
+
+.btn-estrela{margin-left:auto;flex:none;width:34px;height:34px;border:none;border-radius:10px;
+  background:#f2f3f9;color:#b9bccf;font-size:17px;line-height:1;cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s,transform .12s}
+.btn-estrela:active{transform:scale(.9)}
+.btn-estrela.on{background:#fff4d6;color:#e8a317}
+
+#barraSel{position:fixed;left:0;right:0;bottom:0;z-index:7000;display:none;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(38,30,80,.96);backdrop-filter:blur(10px);
+  box-shadow:0 -6px 22px rgba(12,8,40,.35);align-items:center;gap:9px}
+#barraSel.show{display:flex}
+#barraSel .cont{color:#fff;font-size:13.5px;font-weight:600;flex:1;line-height:1.3}
+#barraSel .cont small{display:block;font-weight:400;font-size:11px;color:rgba(255,255,255,.65)}
+#barraSel button{border:none;border-radius:10px;font-family:inherit;font-weight:650;
+  font-size:13px;padding:11px 14px;cursor:pointer;flex:none}
+#btnVerSel{background:rgba(255,255,255,.16);color:#fff}
+#btnExportar{background:#fff;color:var(--roxo-txt)}
+
+#modalSel{position:fixed;inset:0;z-index:9200;display:none;align-items:flex-end;
+  justify-content:center;background:rgba(20,16,50,.55)}
+#modalSel.show{display:flex}
+#modalSel .painel{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:560px;
+  max-height:78vh;display:flex;flex-direction:column;padding:18px 18px 14px}
+#modalSel .topo{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+#modalSel h3{font-size:17px;font-weight:700;color:var(--texto)}
+#modalSel .lista-sel{overflow-y:auto;flex:1;margin-bottom:12px}
+.item-sel{display:flex;align-items:flex-start;gap:10px;padding:11px 2px;
+  border-bottom:1px solid #f1f1f7}
+.item-sel:last-child{border-bottom:none}
+.item-sel .txt{flex:1;min-width:0}
+.item-sel .n{font-weight:600;font-size:14.5px;color:var(--texto);line-height:1.3}
+.item-sel .e{font-size:12px;color:var(--suave);margin-top:3px;line-height:1.35}
+.item-sel button{border:none;background:#fdecec;color:#b5252b;border-radius:9px;
+  width:32px;height:32px;font-size:15px;cursor:pointer;flex:none;padding:0}
+#modalSel .acoes{display:flex;gap:9px}
+#modalSel .acoes button{flex:1;padding:12px;border:none;border-radius:11px;
+  font-family:inherit;font-weight:650;font-size:14px;cursor:pointer}
+#btnLimparSel{background:#fdecec;color:#b5252b}
+#btnFecharSel{background:var(--campo);color:var(--texto)}
+.vazio-sel{text-align:center;color:var(--suave);font-size:13.5px;padding:26px 10px;line-height:1.5}
+
 .pos{flex:none;min-width:27px;height:27px;line-height:27px;text-align:center;border-radius:9px;
   font-size:12.5px;font-weight:700;background:#eef0fb;color:var(--roxo-txt)}
 .pos.p1{background:linear-gradient(135deg,#f6c445,#e8a317);color:#fff}
@@ -549,6 +591,29 @@ footer{text-align:center;color:rgba(255,255,255,.72);font-size:11.5px;margin:26p
   </div>
 </div>
 
+<div id="barraSel">
+  <div class="cont">
+    <span id="contadorSel">0 selecionados</span>
+    <small>Ficam salvos entre buscas</small>
+  </div>
+  <button type="button" id="btnVerSel">Ver lista</button>
+  <button type="button" id="btnExportar">Exportar KML</button>
+</div>
+
+<div id="modalSel">
+  <div class="painel">
+    <div class="topo">
+      <h3>Locais selecionados</h3>
+      <span id="qtdSel" style="font-size:13px;color:var(--suave)"></span>
+    </div>
+    <div class="lista-sel" id="listaSel"></div>
+    <div class="acoes">
+      <button type="button" id="btnLimparSel">Limpar tudo</button>
+      <button type="button" id="btnFecharSel">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ===================================================================
    Nenhuma chave de API neste arquivo.
@@ -561,6 +626,7 @@ const K_CH = 'mf_chave';
 const RAIO_MAX = 50;
 
 let centro = null, nomeRef = '', idAtual = '', chaveAtual = '';
+let ultimosResultados = [];
 
 function idAparelho(){
   let id = null;
@@ -815,6 +881,199 @@ document.getElementById('modalInfo').addEventListener('click', function(e){
   if(e.target === this) this.classList.remove('show');
 });
 
+/* =================================================================
+   SELECAO DE LOCAIS + EXPORTACAO KML
+   Tudo acontece no navegador: nenhuma chamada extra ao Google.
+   As selecoes persistem em localStorage, entao e possivel acumular
+   locais ao longo de varias buscas, inclusive em dias diferentes.
+   ================================================================= */
+const K_SEL = 'bm_selecionados';
+let selecionados = {};
+
+try{ selecionados = JSON.parse(localStorage.getItem(K_SEL) || '{}'); }catch(e){ selecionados = {}; }
+
+function salvaSelecao(){
+  try{ localStorage.setItem(K_SEL, JSON.stringify(selecionados)); }catch(e){}
+}
+
+function totalSel(){ return Object.keys(selecionados).length; }
+
+function atualizaBarraSel(){
+  const n = totalSel();
+  document.getElementById('barraSel').classList.toggle('show', n > 0);
+  document.getElementById('contadorSel').textContent =
+    n + (n === 1 ? ' local selecionado' : ' locais selecionados');
+}
+
+function alternaSelecao(p){
+  if(selecionados[p.id]){
+    delete selecionados[p.id];
+  }else{
+    selecionados[p.id] = {
+      id: p.id, nome: p.nome, endereco: p.endereco,
+      lat: p.lat, lng: p.lng, nota: p.nota, avaliacoes: p.avaliacoes
+    };
+  }
+  salvaSelecao();
+  atualizaBarraSel();
+}
+
+/* --- clique nas estrelas (delegado, sobrevive a novas buscas) --- */
+document.getElementById('lista').addEventListener('click', function(e){
+  const b = e.target.closest('.btn-estrela');
+  if(!b) return;
+  const idx = parseInt(b.getAttribute('data-idx'), 10);
+  const p = ultimosResultados[idx];
+  if(!p) return;
+  alternaSelecao(p);
+  const marcado = !!selecionados[p.id];
+  b.classList.toggle('on', marcado);
+  b.textContent = marcado ? '\u2605' : '\u2606';
+  b.setAttribute('title', marcado ? 'Remover da selecao' : 'Selecionar para exportar');
+});
+
+/* --- modal com a lista de selecionados --- */
+function desenhaListaSel(){
+  const alvo = document.getElementById('listaSel');
+  const itens = Object.keys(selecionados).map(function(k){ return selecionados[k]; });
+  document.getElementById('qtdSel').textContent = itens.length + ' no total';
+
+  if(!itens.length){
+    alvo.innerHTML = '<div class="vazio-sel">Nenhum local selecionado ainda.<br>' +
+      'Toque na estrela dos resultados para adicionar.</div>';
+    return;
+  }
+  alvo.innerHTML = itens.map(function(p){
+    return '<div class="item-sel" data-id="' + p.id + '">' +
+      '<div class="txt"><div class="n">' + escapaHtml(p.nome) + '</div>' +
+      '<div class="e">' + escapaHtml(p.endereco || '') +
+      (p.avaliacoes ? ' \u00b7 ' + p.avaliacoes.toLocaleString('pt-BR') + ' avaliacoes' : '') +
+      '</div></div>' +
+      '<button type="button" class="rem" title="Remover">\u2715</button></div>';
+  }).join('');
+}
+
+function escapaHtml(t){
+  return String(t).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+document.getElementById('listaSel').addEventListener('click', function(e){
+  const b = e.target.closest('.rem');
+  if(!b) return;
+  const id = b.parentElement.getAttribute('data-id');
+  delete selecionados[id];
+  salvaSelecao();
+  atualizaBarraSel();
+  desenhaListaSel();
+  // reflete nos cartoes visiveis
+  const est = document.querySelector('.btn-estrela[data-place="' + id + '"]');
+  if(est){ est.classList.remove('on'); est.textContent = '\u2606'; }
+});
+
+document.getElementById('btnVerSel').addEventListener('click', function(){
+  desenhaListaSel();
+  document.getElementById('modalSel').classList.add('show');
+});
+document.getElementById('btnFecharSel').addEventListener('click', function(){
+  document.getElementById('modalSel').classList.remove('show');
+});
+document.getElementById('modalSel').addEventListener('click', function(e){
+  if(e.target === this) this.classList.remove('show');
+});
+document.getElementById('btnLimparSel').addEventListener('click', function(){
+  if(!totalSel()) return;
+  if(!confirm('Remover todos os ' + totalSel() + ' locais selecionados?')) return;
+  selecionados = {};
+  salvaSelecao();
+  atualizaBarraSel();
+  desenhaListaSel();
+  Array.prototype.forEach.call(document.querySelectorAll('.btn-estrela.on'), function(b){
+    b.classList.remove('on'); b.textContent = '\u2606';
+  });
+});
+
+/* --- geracao do KML, 100% no navegador (nenhuma chamada ao Google) --- */
+function escapaXml(t){
+  return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c];
+  });
+}
+
+function montaKml(itens){
+  const agora = new Date().toLocaleDateString('pt-BR');
+  let x = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<kml xmlns="http://www.opengis.net/kml/2.2">\n' +
+    '  <Document>\n' +
+    '    <name>Busca Map \u2014 ' + escapaXml(agora) + '</name>\n' +
+    '    <description>Locais selecionados no app Busca Map</description>\n' +
+    '    <Style id="bm">\n' +
+    '      <IconStyle><scale>1.1</scale>\n' +
+    '        <Icon><href>http://maps.google.com/mapfiles/kml/paddle/red-circle.png</href></Icon>\n' +
+    '      </IconStyle>\n' +
+    '    </Style>\n';
+
+  itens.forEach(function(p){
+    if(p.lat == null || p.lng == null) return;
+    const det = [];
+    if(p.endereco) det.push(escapaXml(p.endereco));
+    if(p.avaliacoes) det.push(p.avaliacoes.toLocaleString('pt-BR') + ' avaliacoes');
+    if(p.nota) det.push('Nota ' + p.nota.toFixed(1));
+    x += '    <Placemark>\n' +
+      '      <name>' + escapaXml(p.nome) + '</name>\n' +
+      '      <description>' + det.join(' \u00b7 ') + '</description>\n' +
+      '      <styleUrl>#bm</styleUrl>\n' +
+      '      <Point><coordinates>' + p.lng + ',' + p.lat + ',0</coordinates></Point>\n' +
+      '    </Placemark>\n';
+  });
+
+  x += '  </Document>\n</kml>\n';
+  return x;
+}
+
+function paraBase64(bytes){
+  let s = '';
+  const passo = 0x8000;
+  for(let i=0;i<bytes.length;i+=passo){
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i+passo));
+  }
+  return btoa(s);
+}
+
+document.getElementById('btnExportar').addEventListener('click', function(){
+  const itens = Object.keys(selecionados)
+    .map(function(k){ return selecionados[k]; })
+    .filter(function(p){ return p.lat != null && p.lng != null; });
+
+  if(!itens.length){
+    alert('Nenhum local com coordenadas para exportar.');
+    return;
+  }
+
+  const kml = montaKml(itens);
+  const b64 = paraBase64(new TextEncoder().encode(kml));
+
+  const d = new Date();
+  const carimbo = d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+  const nomeArq = 'busca-map-' + carimbo + '.kml';
+
+  // data: URL funciona tanto no Chrome quanto no WebView do APK
+  // (com DownloadListener). blob: nao funciona dentro do WebView.
+  // base64 e usado para preservar os acentos do UTF-8 com seguranca.
+  const a = document.createElement('a');
+  a.href = 'data:application/vnd.google-earth.kml+xml;base64,' + b64;
+  a.download = nomeArq;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+});
+
+atualizaBarraSel();
+
+
 /* ---------------- avisos dos campos ---------------- */
 
 document.getElementById('raio').addEventListener('input', function(){
@@ -897,6 +1156,7 @@ document.getElementById('btn').addEventListener('click', async function(){
 });
 
 function render(locais, raioKm, rotulo, ampla, nomeBusca, chamadas, blocos){
+  ultimosResultados = locais;
   const titulo = nomeBusca ? ('"' + nomeBusca + '" \u00b7 ' + rotulo) : rotulo;
   const modo = nomeBusca ? 'busca por nome' : (ampla ? 'busca ampla' : 'busca estrita');
   document.getElementById('resumo').innerHTML =
@@ -913,9 +1173,14 @@ function render(locais, raioKm, rotulo, ampla, nomeBusca, chamadas, blocos){
     const url = 'https://www.google.com/maps/search/?api=1&query=' +
                 encodeURIComponent(p.nome) + '&query_place_id=' + p.id;
     const classe = i===0 ? ' p1' : (i===1 ? ' p2' : (i===2 ? ' p3' : ''));
+    const marcado = !!selecionados[p.id];
     html += '<div class="card" style="animation-delay:' + Math.min(i*35,500) + 'ms">' +
       '<div class="linha1"><span class="pos'+classe+'">'+(i+1)+'</span>' +
-      '<span class="nome">'+p.nome+'</span></div>' +
+      '<span class="nome">'+p.nome+'</span>' +
+      '<button type="button" class="btn-estrela' + (marcado ? ' on' : '') +
+        '" data-idx="'+i+'" data-place="'+p.id+'" title="' +
+        (marcado ? 'Remover da selecao' : 'Selecionar para exportar') + '">' +
+        (marcado ? '\u2605' : '\u2606') + '</button></div>' +
       '<div class="end">'+p.endereco+'</div>' +
       '<div class="tags">' +
         '<span class="badge forte">'+p.avaliacoes.toLocaleString('pt-BR')+' avaliacoes</span>' +
