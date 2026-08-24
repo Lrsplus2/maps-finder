@@ -20,6 +20,9 @@
 //   LIMITE_AUXILIAR   teto de seguranca para sugestoes de autocomplete e
 //                     detalhes de lugar, que nao contam como "busca"
 //                     (opcional, padrao 400)
+//   TETO_CHAMADAS     maximo de chamadas ao Google por busca (padrao 90).
+//                     Controla o custo da varredura adaptativa.
+//   PROFUNDIDADE_MAX  niveis de subdivisao de setores saturados (padrao 1)
 
 import crypto from 'crypto';
 
@@ -31,6 +34,17 @@ const LIMITE_BUSCA_TODAS = parseInt(process.env.LIMITE_BUSCA_TODAS || '15', 10);
 const LIMITE_AUXILIAR = parseInt(process.env.LIMITE_AUXILIAR || '400', 10);
 
 const SETORES = 7; // centro + 6 ao redor
+
+// Teto de chamadas ao Google por busca. E o freio de custo: a varredura
+// adaptativa so subdivide setores saturados enquanto houver orcamento.
+// Se o orcamento acabar, a resposta vem marcada com truncou=true e o app
+// avisa o usuario a reduzir o raio.
+const TETO_CHAMADAS = parseInt(process.env.TETO_CHAMADAS || '63', 10);
+// Quantos niveis de subdivisao sao permitidos (0 = comportamento antigo)
+const PROFUNDIDADE_MAX = parseInt(process.env.PROFUNDIDADE_MAX || '1', 10);
+// Quantas chamadas disparar em paralelo de cada vez (lotes grandes
+// provocam RESOURCE_EXHAUSTED no Google)
+const LOTE_MAX = parseInt(process.env.LOTE_MAX || '8', 10);
 
 // Quando nenhuma categoria e escolhida, o Google aplica uma nocao interna
 // de "popularidade" que penaliza certos tipos de comercio (lojas de
@@ -76,6 +90,127 @@ const SETORES = 7; // centro + 6 ao redor
 // determinado local, esse local pode nao ser capturado por aquele
 // bloco -- mas os outros 3 blocos e os outros 6 setores do mosaico
 // aumentam bastante a chance de ele ser capturado por algum deles.
+
+// Cada opcao do menu vira um GRUPO de tipos equivalentes da Tabela A do
+// Google. Motivo: a Tabela A tem 468 tipos e usa nomes que o usuario nao
+// adivinha -- "pousada" no Brasil e classificada como "inn", nao "hotel".
+// Caso real: uma pousada com 445 avaliacoes na Ilha do Mel nao aparecia
+// ao escolher Hotel, porque seu tipo primario era "inn".
+// Como a Nearby Search aceita ate 50 tipos por chamada, expandir NAO
+// aumenta o numero de chamadas.
+const EXPANSAO = {
+  restaurant: ["restaurant","fine_dining_restaurant","family_restaurant","diner","bistro",
+    "buffet_restaurant","food_court","meal_delivery","meal_takeaway","brunch_restaurant",
+    "breakfast_restaurant","american_restaurant","mediterranean_restaurant","asian_restaurant",
+    "european_restaurant","latin_american_restaurant","fusion_restaurant","bar_and_grill"],
+  cafe: ["cafe","coffee_shop","cafeteria","coffee_stand","coffee_roastery","tea_house",
+    "cat_cafe","dog_cafe","internet_cafe","juice_shop","acai_shop"],
+  bakery: ["bakery","pastry_shop","bagel_shop","donut_shop","confectionery"],
+  bar: ["bar","cocktail_bar","sports_bar","lounge_bar","gastropub","beer_garden","brewpub",
+    "brewery","winery","hookah_bar","snack_bar","oyster_bar_restaurant"],
+  pub: ["pub","irish_pub","gastropub","brewpub"],
+  wine_bar: ["wine_bar","winery"],
+  night_club: ["night_club","dance_hall","karaoke","live_music_venue","comedy_club"],
+  hamburger_restaurant: ["hamburger_restaurant","fast_food_restaurant","hot_dog_restaurant",
+    "hot_dog_stand","sandwich_shop","chicken_wings_restaurant","chicken_restaurant"],
+  japanese_restaurant: ["japanese_restaurant","sushi_restaurant","ramen_restaurant",
+    "japanese_izakaya_restaurant","japanese_curry_restaurant","yakiniku_restaurant",
+    "yakitori_restaurant","tonkatsu_restaurant"],
+  sushi_restaurant: ["sushi_restaurant","japanese_restaurant"],
+  chinese_restaurant: ["chinese_restaurant","cantonese_restaurant","chinese_noodle_restaurant",
+    "dim_sum_restaurant","dumpling_restaurant","hot_pot_restaurant","noodle_shop"],
+  steak_house: ["steak_house","barbecue_restaurant","brazilian_restaurant"],
+  seafood_restaurant: ["seafood_restaurant","fish_and_chips_restaurant","oyster_bar_restaurant"],
+  vegetarian_restaurant: ["vegetarian_restaurant","vegan_restaurant","health_food_store"],
+  fast_food_restaurant: ["fast_food_restaurant","hamburger_restaurant","pizza_delivery",
+    "hot_dog_stand","sandwich_shop"],
+  ice_cream_shop: ["ice_cream_shop","dessert_shop","acai_shop","candy_store","chocolate_shop"],
+  dessert_shop: ["dessert_shop","dessert_restaurant","pastry_shop","chocolate_shop",
+    "candy_store","cake_shop"],
+  pizza_restaurant: ["pizza_restaurant","pizza_delivery"],
+
+  // hospedagem: "inn" e o tipo mais comum para pousada no Brasil
+  hotel: ["hotel","inn","lodging","resort_hotel","extended_stay_hotel","motel",
+    "bed_and_breakfast","guest_house","private_guest_room","hostel","cottage","farmstay",
+    "japanese_inn","budget_japanese_inn"],
+  motel: ["motel","lodging","inn"],
+  resort_hotel: ["resort_hotel","hotel","lodging"],
+  bed_and_breakfast: ["bed_and_breakfast","inn","guest_house","lodging","private_guest_room"],
+  guest_house: ["guest_house","hostel","inn","bed_and_breakfast","lodging","private_guest_room"],
+  campground: ["campground","camping_cabin","rv_park","mobile_home_park","farmstay","cottage"],
+
+  gym: ["gym","fitness_center","sports_club","sports_activity_location","sports_complex"],
+  fitness_center: ["fitness_center","gym","sports_club"],
+  park: ["park","city_park","state_park","national_park","garden","botanical_garden",
+    "picnic_ground","nature_preserve","wildlife_park","plaza"],
+  tourist_attraction: ["tourist_attraction","historical_landmark","historical_place","monument",
+    "cultural_landmark","observation_deck","visitor_center","scenic_spot","beach","island",
+    "castle","fountain","sculpture"],
+  museum: ["museum","art_museum","history_museum","cultural_center","planetarium"],
+  art_gallery: ["art_gallery","art_museum","art_studio"],
+  movie_theater: ["movie_theater","video_arcade"],
+  performing_arts_theater: ["performing_arts_theater","opera_house","concert_hall",
+    "philharmonic_hall","auditorium","amphitheatre","comedy_club"],
+  shopping_mall: ["shopping_mall","department_store","hypermarket"],
+  supermarket: ["supermarket","hypermarket","grocery_store","discount_supermarket",
+    "asian_grocery_store","food_store","market","farmers_market"],
+  grocery_store: ["grocery_store","supermarket","food_store","butcher_shop","market"],
+  convenience_store: ["convenience_store","general_store","discount_store"],
+  clothing_store: ["clothing_store","womens_clothing_store","sportswear_store","thrift_store"],
+  electronics_store: ["electronics_store","cell_phone_store"],
+  hardware_store: ["hardware_store","home_improvement_store","building_materials_store",
+    "garden_center"],
+  furniture_store: ["furniture_store","home_goods_store"],
+  book_store: ["book_store","library"],
+  pharmacy: ["pharmacy","drugstore"],
+  drugstore: ["drugstore","pharmacy"],
+  hospital: ["hospital","general_hospital","medical_center","medical_clinic","emergency"],
+  doctor: ["doctor","medical_clinic","medical_center","chiropractor","physiotherapist"],
+  dentist: ["dentist","dental_clinic"],
+  spa: ["spa","massage_spa","massage","sauna","wellness_center","public_bath"],
+  beauty_salon: ["beauty_salon","hair_salon","nail_salon","barber_shop","beautician",
+    "makeup_artist","skin_care_clinic","tanning_studio"],
+  hair_salon: ["hair_salon","barber_shop","hair_care","beauty_salon"],
+  barber_shop: ["barber_shop","hair_salon","hair_care"],
+  church: ["church","place_of_worship"],
+  parking: ["parking","parking_lot","parking_garage","park_and_ride"],
+  gas_station: ["gas_station","truck_stop","rest_stop"],
+  car_repair: ["car_repair","tire_shop","auto_parts_store","car_wash"],
+  airport: ["airport","international_airport","airstrip","heliport"],
+  train_station: ["train_station","light_rail_station","transit_station","train_ticket_office"],
+  bus_station: ["bus_station","bus_stop","transit_depot","transit_station"],
+  subway_station: ["subway_station","tram_stop","transit_station"],
+  taxi_stand: ["taxi_stand","taxi_service"],
+  school: ["school","primary_school","secondary_school","preschool","educational_institution"],
+  university: ["university","academic_department","research_institute","educational_institution"],
+  library: ["library","book_store"],
+  stadium: ["stadium","arena","athletic_field","sports_complex","race_course"],
+  swimming_pool: ["swimming_pool","water_park"],
+  amusement_park: ["amusement_park","amusement_center","water_park","ferris_wheel",
+    "roller_coaster","video_arcade","adventure_sports_center"],
+  playground: ["playground","indoor_playground"],
+  zoo: ["zoo","wildlife_park","wildlife_refuge","aquarium"],
+  travel_agency: ["travel_agency","tour_agency","tourist_information_center"],
+  laundry: ["laundry"],
+  bank: ["bank","atm"],
+  atm: ["atm","bank"],
+  storage: ["storage","moving_company"],
+  local_government_office: ["local_government_office","government_office","city_hall"]
+};
+
+// expande a selecao do usuario, sem repetir tipos
+function expandeTipos(escolhidos) {
+  const fora = [];
+  const jaTem = {};
+  for (const t of escolhidos) {
+    const grupo = EXPANSAO[t] || [t];
+    for (const g of grupo) {
+      if (!jaTem[g]) { jaTem[g] = true; fora.push(g); }
+    }
+  }
+  return fora;
+}
+
 const BLOCOS_TIPOS = [
   { incluir: ["restaurant","cafe","coffee_shop","bakery","bar","pub","wine_bar","night_club",
    "pizza_restaurant","hamburger_restaurant","japanese_restaurant","sushi_restaurant",
@@ -191,23 +326,56 @@ function juntaSemRepetir(listas) {
   return saida;
 }
 
-async function google(url, corpo, mascara) {
+function espera(ms) {
+  return new Promise(function (r) { setTimeout(r, ms); });
+}
+
+// O Google impoe limite de requisicoes por minuto. Sob a varredura
+// adaptativa, rajadas paralelas fazem parte das chamadas voltarem com
+// RESOURCE_EXHAUSTED. Medido em 04/08/2026: um lote de 30 simultaneas
+// teve 10 recusas. Sem reenvio, esses resultados sumiriam em silencio e
+// a lista sairia incompleta sem ninguem perceber.
+async function google(url, corpo, mascara, tentativas) {
   const cabecalhos = { 'Content-Type': 'application/json', 'X-Goog-Api-Key': CHAVE };
   if (mascara) cabecalhos['X-Goog-FieldMask'] = mascara;
+  const maxTentativas = tentativas || 4;
+  let ultimoErro = null;
 
-  const r = await fetch(url, {
-    method: corpo ? 'POST' : 'GET',
-    headers: cabecalhos,
-    body: corpo ? JSON.stringify(corpo) : undefined
-  });
-  const dados = await r.json();
-  if (!r.ok) {
-    const msg = (dados && dados.error && dados.error.message) || 'Erro na API do Google';
-    const e = new Error(msg);
+  for (let i = 0; i < maxTentativas; i++) {
+    let r, dados;
+    try {
+      r = await fetch(url, {
+        method: corpo ? 'POST' : 'GET',
+        headers: cabecalhos,
+        body: corpo ? JSON.stringify(corpo) : undefined
+      });
+      dados = await r.json();
+    } catch (falhaRede) {
+      ultimoErro = falhaRede;
+      await espera(220 * Math.pow(2, i) + Math.random() * 180);
+      continue;
+    }
+
+    if (r.ok) return dados;
+
+    const info = (dados && dados.error) || {};
+    const excedeu = r.status === 429 || info.status === 'RESOURCE_EXHAUSTED';
+
+    if (excedeu && i < maxTentativas - 1) {
+      // espera progressiva com variacao, para nao reenviar tudo junto de novo
+      await espera(260 * Math.pow(2, i) + Math.random() * 240);
+      continue;
+    }
+
+    const e = new Error(info.message || 'Erro na API do Google');
     e.status = r.status;
+    e.excedeu = excedeu;
     throw e;
   }
-  return dados;
+
+  const e = ultimoErro || new Error('Falha ao consultar o Google');
+  e.status = e.status || 503;
+  throw e;
 }
 
 const MASCARA = [
@@ -342,7 +510,9 @@ export default async function handler(req, res) {
 
     let blocos;
     if (acao === 'proximos') {
-      blocos = semCategoria ? BLOCOS_TIPOS : emBlocosDe50(tipos).map(function (t) {
+      // expande cada categoria escolhida para seus tipos equivalentes
+      const expandidos = expandeTipos(tipos);
+      blocos = semCategoria ? BLOCOS_TIPOS : emBlocosDe50(expandidos).map(function (t) {
         return { incluir: t };
       });
     } else {
@@ -362,84 +532,130 @@ export default async function handler(req, res) {
       });
     }
 
-    const pontos = mosaico(lat, lng, raioKm);
+    // ---- varredura adaptativa ----
+    // Uma chamada que volta com exatamente 20 resultados significa que o
+    // Google CORTOU a lista: existem mais lugares ali do que coube. Nesse
+    // caso o setor e subdividido e consultado de novo, so onde houve corte.
+    //
+    // Sem isso, areas densas perdem locais importantes de forma silenciosa.
+    // Caso real medido em 04/08/2026 (Ilha do Mel, raio 7 km): um setor
+    // devolveu 20 resultados incluindo lugares de 39, 56 e 71 avaliacoes,
+    // enquanto uma pousada de 445 avaliacoes ficou de fora. Subdividir
+    // aquele setor a encontrou de imediato. Isso tambem confirma que
+    // rankPreference POPULARITY nao ordena por numero de avaliacoes.
 
-    const tarefas = [];
+    function consulta(pt, bloco) {
+      if (acao === 'proximos') {
+        const q = {
+          maxResultCount: 20,
+          rankPreference: 'POPULARITY',
+          languageCode: 'pt-BR',
+          locationRestriction: {
+            circle: {
+              center: { latitude: pt.lat, longitude: pt.lng },
+              radius: Math.min(50000, pt.raioKm * 1000)
+            }
+          }
+        };
+        if (bloco && bloco.incluir && bloco.incluir.length) {
+          if (!semCategoria && corpo.ampla) q.includedTypes = bloco.incluir;
+          else q.includedPrimaryTypes = bloco.incluir;
+        } else if (bloco && bloco.excluir && bloco.excluir.length) {
+          q.excludedPrimaryTypes = bloco.excluir;
+        }
+        return google('https://places.googleapis.com/v1/places:searchNearby', q, MASCARA)
+          .catch(function () { falhas++; return { places: [] }; });
+      }
+
+      const dLat = pt.raioKm / 111;
+      const cos = Math.cos((pt.lat * Math.PI) / 180);
+      const dLng = pt.raioKm / (111 * (Math.abs(cos) < 0.01 ? 0.01 : cos));
+      const q = {
+        textQuery: String(corpo.texto || ''),
+        maxResultCount: 20,
+        languageCode: 'pt-BR',
+        locationRestriction: {
+          rectangle: {
+            low: {
+              latitude: Math.max(-85, pt.lat - dLat),
+              longitude: Math.max(-179.9, pt.lng - dLng)
+            },
+            high: {
+              latitude: Math.min(85, pt.lat + dLat),
+              longitude: Math.min(179.9, pt.lng + dLng)
+            }
+          }
+        }
+      };
+      if (bloco && bloco.incluir && bloco.incluir.length === 1) {
+        q.includedType = bloco.incluir[0];
+      }
+      return google('https://places.googleapis.com/v1/places:searchText', q, MASCARA)
+        .catch(function () { falhas++; return { places: [] }; });
+    }
+
+    let falhas = 0;
+    const pontos = mosaico(lat, lng, raioKm);
+    const vistos = new Map();
+
+    // Subdivide-se apenas o bloco "livre" (catch-all) quando a busca e
+    // "todas as categorias", e sempre quando o usuario escolheu categorias
+    // -- ai o bloco de tipos E o alvo. Assim o orcamento nao se dispersa
+    // subdividindo os blocos-rede do modo generico.
+    function podeSubdividir(bloco) {
+      if (!semCategoria) return true;
+      return !(bloco && bloco.incluir && bloco.incluir.length);
+    }
+
+    let fila = [];
     for (const bloco of blocos) {
       for (const pt of pontos) {
-        tarefas.push(
-          (function (pt, bloco) {
-            // --- por proximidade: circulos ---
-            if (acao === 'proximos') {
-              const q = {
-                maxResultCount: 20,
-                rankPreference: 'POPULARITY',
-                languageCode: 'pt-BR',
-                locationRestriction: {
-                  circle: {
-                    center: { latitude: pt.lat, longitude: pt.lng },
-                    radius: Math.min(50000, pt.raioKm * 1000)
-                  }
-                }
-              };
-              if (bloco && bloco.incluir && bloco.incluir.length) {
-                if (!semCategoria && corpo.ampla) q.includedTypes = bloco.incluir;
-                else q.includedPrimaryTypes = bloco.incluir;
-              } else if (bloco && bloco.excluir && bloco.excluir.length) {
-                q.excludedPrimaryTypes = bloco.excluir;
-              }
-              return google(
-                'https://places.googleapis.com/v1/places:searchNearby',
-                q,
-                MASCARA
-              ).catch(function () {
-                return { places: [] };
-              });
-            }
-
-            // --- por nome: retangulos ---
-            const dLat = pt.raioKm / 111;
-            const cos = Math.cos((pt.lat * Math.PI) / 180);
-            const dLng = pt.raioKm / (111 * (Math.abs(cos) < 0.01 ? 0.01 : cos));
-            const q = {
-              textQuery: String(corpo.texto || ''),
-              maxResultCount: 20,
-              languageCode: 'pt-BR',
-              locationRestriction: {
-                rectangle: {
-                  low: {
-                    latitude: Math.max(-85, pt.lat - dLat),
-                    longitude: Math.max(-179.9, pt.lng - dLng)
-                  },
-                  high: {
-                    latitude: Math.min(85, pt.lat + dLat),
-                    longitude: Math.min(179.9, pt.lng + dLng)
-                  }
-                }
-              }
-            };
-            if (bloco && bloco.incluir && bloco.incluir.length === 1) {
-              q.includedType = bloco.incluir[0];
-            }
-            return google(
-              'https://places.googleapis.com/v1/places:searchText',
-              q,
-              MASCARA
-            ).catch(function () {
-              return { places: [] };
-            });
-          })(pt, bloco)
-        );
+        fila.push({ pt: pt, bloco: bloco, nivel: 0, abre: podeSubdividir(bloco) });
       }
     }
 
-    const respostas = await Promise.all(tarefas);
+    let chamadas = 0;
+    let orcamento = TETO_CHAMADAS;
+    let truncou = false;
 
-    const brutos = juntaSemRepetir(
-      respostas.map(function (r) {
-        return r.places;
-      })
-    );
+    while (fila.length && orcamento > 0) {
+      // respeita o orcamento e evita rajadas grandes demais de uma vez
+      const lote = fila.splice(0, Math.min(fila.length, orcamento, LOTE_MAX));
+      orcamento -= lote.length;
+      chamadas += lote.length;
+
+      const respostas = await Promise.all(
+        lote.map(function (t) { return consulta(t.pt, t.bloco); })
+      );
+
+      const proxima = [];
+      respostas.forEach(function (r, i) {
+        const t = lote[i];
+        const achados = (r && r.places) || [];
+        for (const p of achados) {
+          if (p && p.id && !vistos.has(p.id)) vistos.set(p.id, p);
+        }
+        // saturou: havia mais do que coube na resposta
+        if (achados.length >= 20) {
+          if (t.abre && t.nivel < PROFUNDIDADE_MAX) {
+            const filhos = mosaico(t.pt.lat, t.pt.lng, t.pt.raioKm);
+            for (const sub of filhos) {
+              proxima.push({ pt: sub, bloco: t.bloco, nivel: t.nivel + 1, abre: true });
+            }
+          } else if (t.abre) {
+            truncou = true;
+          }
+        }
+      });
+
+      fila = fila.concat(proxima);
+    }
+
+    if (fila.length) truncou = true;  // orcamento acabou antes de terminar
+    if (falhas > 0) truncou = true;   // alguma chamada nao voltou: lista pode estar incompleta
+
+    const brutos = [];
+    vistos.forEach(function (p) { brutos.push(p); });
 
     const dentro = brutos.filter(function (p) {
       if (!p.location) return true;
@@ -448,8 +664,10 @@ export default async function handler(req, res) {
 
     return res.json({
       locais: normaliza(dentro),
-      chamadas: pontos.length,
-      blocos: blocos.length
+      chamadas: chamadas,
+      blocos: blocos.length,
+      truncou: truncou,
+      falhas: falhas
     });
   } catch (e) {
     return res.status(e.status || 500).json({ erro: e.message });
