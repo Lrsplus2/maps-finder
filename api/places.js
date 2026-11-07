@@ -390,7 +390,8 @@ const MASCARA = [
   'places.formattedAddress',
   'places.location',
   'places.rating',
-  'places.userRatingCount'
+  'places.userRatingCount',
+  'places.primaryTypeDisplayName'
 ].join(',');
 
 function normaliza(lista) {
@@ -401,6 +402,7 @@ function normaliza(lista) {
       endereco: p.formattedAddress || '',
       nota: p.rating || null,
       avaliacoes: p.userRatingCount || 0,
+      tipo: (p.primaryTypeDisplayName && p.primaryTypeDisplayName.text) || null,
       lat: p.location ? p.location.latitude : null,
       lng: p.location ? p.location.longitude : null
     };
